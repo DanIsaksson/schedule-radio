@@ -2,11 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Schedule;
+namespace ScheduleStorage;
 
 // Root object that keeps a rolling seven-day schedule starting from today.
 public class ScheduleData
 {
+    // Declare and initialize Days-list and make it a list of 7 elements starting at 0.
     public List<DaySchedule> Days { get; } = Enumerable.Range(0, 7)
         .Select(offset => new DaySchedule(DateTime.Today.AddDays(offset)))
         .ToList();
@@ -15,7 +16,7 @@ public class ScheduleData
 // Represents a single calendar day and its 24 one-hour slots.
 public class DaySchedule
 {
-    // Initiate DateTime as Date for retrieval only.
+    // Initiate DateTime as Date for retrieval only
     public DateTime Date { get; }
 
     // Instance HourSchedule list as Hours and fill with 24 blocks covering 00-23 from Enumerable.Range

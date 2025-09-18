@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Scheduler Radio · Demo UI</title>
+  <!--
+    Very light-weight styling is kept in style.css so the HTML stays clean.
+    You can safely replace the stylesheet with something richer later.
+  -->
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!--
+    ---------------
+    Header Section
+    ---------------
+    Only a heading for now – enough to show the user what this page is.
+  -->
+  <header>
+    <h1>Today’s Schedule</h1>
+  </header>
+
+  <!--
+    ---------------
+    Action Section
+    ---------------
+    A single button that triggers a fetch() to the backend.
+    The "id" is referenced in script.js.
+  -->
+  <section>
+    <button id="loadBtn">Load from API</button>
+  </section>
+
+  <!--
+    ---------------
+    Output Section
+    ---------------
+    <pre> preserves whitespace so our JSON is readable.
+  -->
+  <section>
+    <pre id="output">Click the button to load data...</pre>
+    <ul id="scheduleList" class="schedule">
+      <li>Click the button to load data...</li>
+    </ul>
+  </section>
+
+  <!--
+    Front-end logic loaded as plain JS; no bundler required.
+    Keep the <script> tag at the end so HTML renders first.
+  -->
+  <script src="script.js"></script>
+</body>
+</html>
