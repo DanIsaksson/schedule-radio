@@ -1,32 +1,55 @@
-# 1. Radio station
-Your client for this assignment is a radio station where your will set up a
-system that schedules the station broadcast. The station has a 24/7 stream,
-based on live sessions, prerecorded spoken material and music. You will
-have to igure out how to help the station function well.  
+# Radio Station Scheduling System
 
-# 2. Scheduling
-• Content is scheduled seven days ahead.
-• Days follow the calendar, so a new day at 24:00.
-• The stream goes on each day for 24 hours.
-• If no other content is scheduled, the station will play music.
+## 1. Overview
+This project involves creating a scheduling system for a radio station that operates 24/7. The station's content consists of:
+- Live sessions
+- Pre-recorded material
+- Music (default content)
 
-## The station has two other content types:
-- Pre-recorded reportage
-- Live studio sessions. If the session is conducted by one host,
-then it will be booked to Studio 1, which is a cheaper
-alternative. Other sessions are booked to the Studio 2. If the
-session has a guest, there is additional cost for guest transport.
+## 2. Core Requirements
 
-3. Code Requirements
-• The assignment will continue the coming week, when we begin with
-web applications. Start the application as a console application, but be
-aware of the coming change. Focus on the classes concerned with the
-scheduling and avoid the Console in these classes.
-• At this stage, tracking the economy is not an issue. But this might
-change in the future.
-• Consider creating strong typing (classes) for all the data scheduled,
-also for the daily scheduling in itself.
-• Consider that the schedule could be seen as a list of lists.  
+### 2.1 Schedule Management
+- Schedule maintained 7 days in advance
+- Days align with calendar (00:00 - 23:59)
+- Continuous 24-hour broadcasting
+- Default content: Music plays when no other content is scheduled
 
-# PERSONAL NOTES
-I was sick when we got this first part of the assignment. I am struggling to comprehend a lot of the details and such. In order to progress I have to comprehend what is happening in my code and the core logic underpinning it, the ideas that flow through it (so to speak). I am building this as a web app already, so we can ignore the "start the application as a console applicaiton" from last week.
+### 2.2 Content Types
+1. Pre-recorded reportage
+2. Live studio sessions
+   - Single host: Uses Studio 1 (lower cost)
+   - Multiple participants: Uses Studio 2
+   - Guest appearances incur additional transport costs
+
+### 2.3 Technical Implementation
+- Use strong typing (classes) for all scheduled data
+- Schedule structure: Implement as list of lists
+- Future considerations:
+  - Economic tracking may be added later
+  - Web application integration
+
+## 3. API Endpoints
+
+### 3.1 Schedule Operations
+- Get today's schedule
+- Get 7-day schedule
+- Get single event details
+- Post new event
+- Reschedule existing event
+
+### 3.2 Participant Management
+- Add/Remove host
+- Add/Remove guest
+
+### 3.3 Event Management
+- Delete scheduled event
+
+## 4. Technical Notes
+- Use MapGet() for retrieving information
+- Use MapPost() for modifying information
+- Implementation should support future refactoring
+
+## 5. Project Deadline
+Submit to GitHub repository by Tuesday, September 23, 15:00
+
+Note: This is a web application project with focus on API implementation and scheduling logic.

@@ -23,6 +23,7 @@
 
 These changes happen in `script.js` and will affect how your web page *behaves* and *displays* information after you click the button.
 
+# START OF FINISHED EXPERIMENTS #
 >> DONE
 >> THESE ARE FINISHED. FAIRLY SIMPLE BUT 
 >> PERHAPS TOO LITTLE COMPLEXITY IN TERMS OF 
@@ -53,7 +54,7 @@ Your browser's Developer Console (press F12) is your best friend. It's like a se
 
 #### B. Changing What You Ask For: The `fetch()` Call
 
-
+# END OF FINISHED EXPERIMENTS #
 
 
 
