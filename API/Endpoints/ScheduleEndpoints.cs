@@ -15,10 +15,11 @@
 // allows us to "add" new methods to existing types without modifying them. Here, we are
 // adding a 'MapScheduleEndpoints' method to the 'WebApplication' type (our 'app' object).
 //
-using Scheduler.Models; // Use our new models
-using ScheduleAction; // Keep using the actions from the original file
+using API; // Use our new models
+using API.Actions; // Keep using the actions from the original file
+using API.Models;
 
-namespace Scheduler.Endpoints
+namespace API.Endpoints
 {
     public static class ScheduleEndpoints
     {

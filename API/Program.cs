@@ -17,9 +17,9 @@
 // container (builder.Services). Then, ASP.NET Core automatically provides these
 // services to our endpoints when they are requested as parameters.
 //
-using Scheduler.Models; // Use our new models
-using ScheduleAction; // Keep using the actions from the original file
-using Scheduler.Endpoints; // Import our new endpoint definitions
+using API.Models; // Use our new models
+using API.Actions; // Keep using the actions from the original file
+using API.Endpoints; // Import our new endpoint definitions
 
 // --- 1. SETUP THE BUILDER ---
 // The WebApplicationBuilder is where we configure the services our app will use.

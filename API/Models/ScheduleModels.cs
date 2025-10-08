@@ -13,9 +13,8 @@
 // `public List<DaySchedule> Days { get; } = ...;`) which automatically create
 // a private, anonymous backing field that can only be accessed through the property's
 // get and set accessors.
-//
 
-namespace Scheduler.Models // A new namespace to avoid conflicts
+namespace API.Models // A new namespace to avoid conflicts
 {
     /// <summary>
     /// Represents the entire 7-day rolling schedule for the radio station.

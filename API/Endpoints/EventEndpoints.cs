@@ -16,10 +16,11 @@
 // 'model binding'. ASP.NET Core automatically reads the JSON body of the POST request
 // and matches the JSON properties to the method parameters by name.
 //
-using Scheduler.Models; // Use our new models
-using ScheduleAction; // Keep using the actions from the original file
+using API; // Use our new models
+using API.Actions; // Keep using the actions from the original file
+using API.Models;
 
-namespace Scheduler.Endpoints
+namespace API.Endpoints
 {
     public static class EventEndpoints
     {

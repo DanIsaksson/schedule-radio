@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Scheduler.Models; // Use our new models instead of the old ones
+using API.Models; // Use our new models instead of the old ones
 
-namespace ScheduleAction;
+namespace API.Actions;
 
 public static class Booking
 {
