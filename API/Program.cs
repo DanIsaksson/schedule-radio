@@ -1,28 +1,16 @@
 // --- FILE: Program.cs ---
 //
 // This is the main entry point for our entire web API.
-//
-// PURPOSE:
-// To configure and run the web server. This file is responsible for setting up
-// all the services the application needs (like CORS, Swagger for documentation, etc.)
-// and defining the request processing pipeline (like serving static files).
-//
-// CONCEPT: MINIMAL APIS & DEPENDENCY INJECTION
-// We are using ASP.NET Core's "Minimal API" framework. It's designed to be
-// lightweight and easy to start with. Instead of complex controller classes, we
-// define endpoints directly on the 'WebApplication' object ('app').
-//
-// A core concept here is 'Dependency Injection' (DI). Instead of creating objects
-// manually wherever we need them, we register them as 'services' with a central
-// container (builder.Services). Then, ASP.NET Core automatically provides these
-// services to our endpoints when they are requested as parameters.
-//
-using API.Models; // Use our new models
-using API.Actions; // Keep using the actions from the original file
-using API.Endpoints; // Import our new endpoint definitions
-
 // --- 1. SETUP THE BUILDER ---
 // The WebApplicationBuilder is where we configure the services our app will use.
+// USINGs: kept at top so the compiler knows where types like ScheduleData, SchedulerContext, and
+// extension methods (MapScheduleEndpoints, etc.) come from.
+using API.Models; // ScheduleData
+using API.Actions; // Booking
+using API.Endpoints; // MapScheduleEndpoints, MapEventEndpoints, MapEventDbEndpoints
+using Microsoft.EntityFrameworkCore; // AddDbContext, UseSqlite
+using API.Data; // SchedulerContext
+
 var builder = WebApplication.CreateBuilder(args);
 
 // --- 2. REGISTER SERVICES (Dependency Injection) ---
@@ -37,6 +25,14 @@ builder.Services.AddCors(options =>
         policy.AllowAnyOrigin()
               .AllowAnyMethod()
               .AllowAnyHeader());
+});
+
+// --- DATABASE: REGISTER EF CORE CONTEXT ---
+// This connects EF Core to SQLite using the "Scheduler" connection string (see appsettings.json).
+builder.Services.AddDbContext<SchedulerContext>(options =>
+{
+    // UseSqlite tells EF Core to use a lightweight file database. The file will be created if it doesn't exist.
+    options.UseSqlite(builder.Configuration.GetConnectionString("Scheduler"));
 });
 
 // --- IMPORTANT: REGISTERING OUR SCHEDULE AS A SINGLETON ---
@@ -74,6 +70,7 @@ app.UseCors();
 // incredibly clean and organized.
 app.MapScheduleEndpoints();
 app.MapEventEndpoints();
+app.MapEventDbEndpoints();
 
 // --- LEGACY ENDPOINT ---
 // This is the original, simple booking endpoint. We can keep it for now
