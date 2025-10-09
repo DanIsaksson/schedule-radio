@@ -31,49 +31,40 @@ namespace API.Endpoints
             var group = app.MapGroup("/db/event");
 
             // GET /db/event => list all persisted bookings
-            group.MapGet("/", () =>
+            group.MapGet("/", (SchedulerContext db) =>
             {
-                // STEP BY STEP (replace 501 when ready):
-                // 1) Add parameter: (SchedulerContext db) => {...}
-                // 2) Call: var events = EventActionsDb.ListEvents(db);
-                // 3) Return: Results.Ok(events);
-                return Results.StatusCode(501); // Not Implemented (placeholder)
+                var events = EventActionsDb.ListEvents(db);
+                return Results.Ok(events);
             });
 
             // GET /db/event/{eventId} => details of one booking
-            group.MapGet("/{eventId}", (int eventId) =>
+            group.MapGet("/{eventId}", (int eventId, SchedulerContext db) =>
             {
-                // 1) Inject db: (int eventId, SchedulerContext db) => {...}
-                // 2) Find: var e = db.Events.Find(eventId);
-                // 3) Return 404 if e is null; else 200 OK with e.
-                return Results.StatusCode(501);
+                var e = db.Events.Find(eventId);
+                return e is null ? Results.NotFound($"No event with id {eventId}") : Results.Ok(e);
             });
 
             // POST /db/event/post => create a booking (returns new Id)
-            group.MapPost("/post", (DateTime date, int hour, int startMinute, int endMinute) =>
+            group.MapPost("/post", (DateTime date, int hour, int startMinute, int endMinute, SchedulerContext db) =>
             {
-                // 1) Inject db: (..., SchedulerContext db)
-                // 2) Call: var id = EventActionsDb.CreateEvent(db, date, hour, startMinute, endMinute);
-                // 3) If id == -1 => return Results.BadRequest("Conflict or invalid input"); else Results.Ok(new { EventId = id })
-                return Results.StatusCode(501);
+                int id = EventActionsDb.CreateEvent(db, date, hour, startMinute, endMinute);
+                return id == -1
+                    ? Results.BadRequest("Conflict or invalid input")
+                    : Results.Ok(new { EventId = id });
             });
 
             // POST /db/event/{eventId}/reschedule => change time
-            group.MapPost("/{eventId}/reschedule", (int eventId, DateTime newDate, int newHour, int newStartMinute, int newEndMinute) =>
+            group.MapPost("/{eventId}/reschedule", (int eventId, DateTime newDate, int newHour, int newStartMinute, int newEndMinute, SchedulerContext db) =>
             {
-                // 1) Inject db: (..., SchedulerContext db)
-                // 2) Call: var ok = EventActionsDb.RescheduleEvent(db, eventId, newDate, newHour, newStartMinute, newEndMinute);
-                // 3) Return Ok() or BadRequest()
-                return Results.StatusCode(501);
+                bool ok = EventActionsDb.RescheduleEvent(db, eventId, newDate, newHour, newStartMinute, newEndMinute);
+                return ok ? Results.Ok() : Results.BadRequest("Reschedule failed (conflict or invalid id)");
             });
 
             // POST /db/event/{eventId}/delete => remove booking
-            group.MapPost("/{eventId}/delete", (int eventId) =>
+            group.MapPost("/{eventId}/delete", (int eventId, SchedulerContext db) =>
             {
-                // 1) Inject db: (int eventId, SchedulerContext db)
-                // 2) Call: var ok = EventActionsDb.DeleteEvent(db, eventId);
-                // 3) Return Ok() or BadRequest()
-                return Results.StatusCode(501);
+                bool ok = EventActionsDb.DeleteEvent(db, eventId);
+                return ok ? Results.Ok() : Results.BadRequest("Delete failed (invalid id)");
             });
         }
     }

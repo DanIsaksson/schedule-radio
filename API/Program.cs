@@ -10,6 +10,7 @@ using API.Actions; // Booking
 using API.Endpoints; // MapScheduleEndpoints, MapEventEndpoints, MapEventDbEndpoints
 using Microsoft.EntityFrameworkCore; // AddDbContext, UseSqlite
 using API.Data; // SchedulerContext
+using Scheduler.Endpoints; // MapSimpleEndpoints
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -43,10 +44,22 @@ builder.Services.AddDbContext<SchedulerContext>(options =>
 // exact same in-memory schedule data.
 builder.Services.AddSingleton<ScheduleData>();
 
+// Swagger addition
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
 
 // --- 3. BUILD THE APPLICATION ---
 // This creates the 'app' object, which we use to define our request pipeline.
 var app = builder.Build();
+
+// --- Ensure database exists (create tables if missing) ---
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<SchedulerContext>();
+    db.Database.EnsureCreated();
+}
+
+if (app.Environment.IsDevelopment()) { app.UseSwagger(); app.UseSwaggerUI(); }
 
 // --- 4. CONFIGURE THE HTTP REQUEST PIPELINE ---
 // The pipeline is a series of middleware components that process an incoming
@@ -71,6 +84,12 @@ app.UseCors();
 app.MapScheduleEndpoints();
 app.MapEventEndpoints();
 app.MapEventDbEndpoints();
+
+// Map simple test endpoints only in Development
+if (app.Environment.IsDevelopment())
+{
+    app.MapSimpleEndpoints();
+}
 
 // --- LEGACY ENDPOINT ---
 // This is the original, simple booking endpoint. We can keep it for now

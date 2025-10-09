@@ -49,16 +49,33 @@ namespace API.Actions
             if (startMinute < 0 || startMinute > 59) return -1;
             if (endMinute <= startMinute || endMinute > 60) return -1;
             
-
             // 2) Query existing bookings for the same date and hour:
-            
-            // 3) Check overlap with any existing booking in sameHour:
-            //    If overlaps => return -1.
-            // 4) Create a new EventEntity, add it, and SaveChanges().
-            // 5) Return the generated Id.
+            var day = date.Date;
+            var sameHour = db.Events
+                .Where(e => e.Date == day && e.Hour == hour)
+                .ToList();
 
-            // TODO: Implement the steps above.
-            return -1;
+            // 3) Check overlap with any existing booking in sameHour:
+            foreach (var e in sameHour)
+            {
+                // Overlap if NOT (end <= otherStart || otherEnd <= start)
+                bool overlaps = !(endMinute <= e.StartMinute || e.EndMinute <= startMinute);
+                if (overlaps) return -1;
+            }
+
+            // 4) Create a new EventEntity, add it, and SaveChanges().
+            var entity = new EventEntity
+            {
+                Date = day,
+                Hour = hour,
+                StartMinute = startMinute,
+                EndMinute = endMinute
+            };
+            db.Events.Add(entity);
+            db.SaveChanges();
+
+            // 5) Return the generated Id.
+            return entity.Id;
         }
 
         // Delete a booking by Id. Return true on success; false if not found.
@@ -67,9 +84,11 @@ namespace API.Actions
             // 1) Find the entity: var entity = db.Events.Find(eventId);
             // 2) If null => return false.
             // 3) Remove(entity); SaveChanges(); return true.
-
-            // TODO: Implement the steps above.
-            return false;
+            var entity = db.Events.Find(eventId);
+            if (entity is null) return false;
+            db.Events.Remove(entity);
+            db.SaveChanges();
+            return true;
         }
 
         // Change the time of an existing booking. Return true on success.
@@ -85,17 +104,38 @@ namespace API.Actions
             // 2) Check conflicts at (newDate, newHour) with the same overlap rule, BUT ignore this event's own Id.
             // 3) If conflict => return false.
             // 4) Update the entity's fields and SaveChanges(); return true.
+            var entity = db.Events.Find(eventId);
+            if (entity is null) return false;
 
-            // TODO: Implement the steps above.
-            return false;
+            // Basic validation for the new time
+            if (newHour < 0 || newHour > 23) return false;
+            if (newStartMinute < 0 || newStartMinute > 59) return false;
+            if (newEndMinute <= newStartMinute || newEndMinute > 60) return false;
+
+            var day = newDate.Date;
+            var sameHour = db.Events
+                .Where(e => e.Date == day && e.Hour == newHour && e.Id != eventId)
+                .ToList();
+
+            foreach (var e in sameHour)
+            {
+                bool overlaps = !(newEndMinute <= e.StartMinute || e.EndMinute <= newStartMinute);
+                if (overlaps) return false;
+            }
+
+            entity.Date = day;
+            entity.Hour = newHour;
+            entity.StartMinute = newStartMinute;
+            entity.EndMinute = newEndMinute;
+            db.SaveChanges();
+            return true;
         }
 
         // Read all bookings. Simple helper to test reads early.
         public static List<EventEntity> ListEvents(SchedulerContext db)
         {
             // TIP: Start simple. You can sort later if you want to.
-            // return db.Events.ToList();
-            return new List<EventEntity>(); // TODO: Replace with actual query.
+            return db.Events.ToList();
         }
     }
 }
