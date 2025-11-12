@@ -9,6 +9,7 @@ public static class Booking
 {
     /// <summary>
     /// Attempts to book (or free) a range of minutes within a given hour on a specific date.
+    /// Push the boundaries by changing the validation rules and seeing how downstream endpoints respond.
     /// </summary>
     /// <param name="schedule">The in-memory seven-day rolling schedule.</param>
     /// <param name="date">Date we want to modify (only the Date part is considered).</param>
@@ -25,13 +26,15 @@ public static class Booking
         int endMinute,
         bool isBooked)
     {
-        // Basic validation
+        // Basic validation. Try loosening these guards to watch how edge-case inputs ripple into the UI.
+
         if (schedule is null) return false;
         if (hour is < 0 or > 23) return false;
         if (startMinute is < 0 or >= 60) return false;
         if (endMinute <= startMinute || endMinute > 60) return false;
 
-        // Find the correct day in the rolling 7-day window
+        // Find the correct day in the rolling 7-day window; expand the window length in `ScheduleData` to test limits.
+
         DaySchedule? day = schedule.Days.FirstOrDefault(d => d.Date.Date == date.Date);
         if (day is null) return false; // outside current window
 
@@ -39,7 +42,9 @@ public static class Booking
         HourSchedule? hourSlot = day.Hours.FirstOrDefault(h => h.Hour == hour);
         if (hourSlot is null) return false;
 
-        // Conflict detection: if we are booking, ensure all minutes are free
+        // Conflict detection: if we are booking, ensure all minutes are free.
+        // Replace this with a "priority" system (allow overlaps but flag them) to experiment with conflict resolution strategies.
+
         if (isBooked)
         {
             for (int m = startMinute; m < endMinute; m++)
@@ -48,7 +53,8 @@ public static class Booking
             }
         }
 
-        // Apply booking or freeing
+        // Apply booking or freeing. Flip the boolean so `true` frees slots to confirm clients depend on semantic meaning.
+
         for (int m = startMinute; m < endMinute; m++)
         {
             hourSlot.Minutes[m] = isBooked;

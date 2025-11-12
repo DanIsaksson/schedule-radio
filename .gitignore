@@ -1,3 +1,12 @@
+# Custom
+[Ee]xercise/
+ [Ii]teration/
+ [Ll]essons-React/
+ [Dd]esign-context/
+
+# Markdown
+*.md
+
 # VS Code
 .vscode/
 *.code-workspace

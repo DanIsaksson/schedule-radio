@@ -2,11 +2,11 @@
 //
 // PURPOSE
 // - Database-backed equivalents of the current in-memory event actions.
-// - These methods are intentionally left as guided skeletons for you to implement.
+// - These methods are intentionally left as guided skeletons so you can compare EF persistence against the in-memory path.
 //
 // HOW TO USE
-// - Inject SchedulerContext (db) into endpoints and call these methods.
-// - Use simple, synchronous EF calls (ToList, Find, Add, Remove, SaveChanges).
+// - Inject SchedulerContext (db) into endpoints and call these methods while watching how EF tracks entity state.
+// - Use simple, synchronous EF calls (ToList, Find, Add, Remove, SaveChanges) before experimenting with async or tracking tweaks.
 //
 // SYNTAX PRIMER (read once, then implement TODOs below)
 // - DbContext & DbSet<T> basics:
@@ -26,7 +26,7 @@
 //
 // - Minimal APIs + DI:
 //     If an endpoint lambda has a parameter 'SchedulerContext db', ASP.NET injects it for you.
-//     You do NOT 'new' the context yourself; the framework manages its lifetime per request.
+//     You do NOT 'new' the context yourself; the framework manages its lifetime per request. Flip lifetimes in Program.cs to feel the difference between Scoped and Singleton contexts.
 //
 // STEP-BY-STEP HINTS ARE INCLUDED INSIDE EACH METHOD.
 
