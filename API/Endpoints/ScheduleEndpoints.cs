@@ -1,20 +1,6 @@
-// --- FILE: ScheduleEndpoints.cs ---
-//
-// This file is part of our new, modular endpoint system.
-//
-// PURPOSE:
-// To define all API endpoints that are purely for GETTING (reading) schedule information.
-// We group them here to keep our Program.cs file clean and to make it obvious
-// where to find the code for specific URLs.
-//
-// CONCEPT: STATIC CLASS & EXTENSION METHODS
-// This is a 'static class'. That means we can't create an instance of it with 'new'.
-// Instead, all its methods are called directly on the class itself.
-//
-// We are also defining an 'extension method', MapScheduleEndpoints. An extension method
-// allows us to "add" new methods to existing types without modifying them. Here, we are
-// adding a 'MapScheduleEndpoints' method to the 'WebApplication' type (our 'app' object).
-//
+// --- FILE: Endpoints/ScheduleEndpoints.cs ---
+// Beginner view: legacy READ endpoints backed by in-memory ScheduleData (not the DB path).
+// - Useful for demos; consumer UI now uses /db/schedule/* (see ScheduleDbEndpoints.cs).//
 using API; // Use our new models
 using API.Actions; // Keep using the actions from the original file
 using API.Models;
@@ -23,37 +9,27 @@ namespace API.Endpoints
 {
     public static class ScheduleEndpoints
     {
-        // This is our extension method.
-        // 'this WebApplication app' tells the compiler that this method extends the WebApplication class.
+        // Extension method: I attach these routes to WebApplication (app).
         public static void MapScheduleEndpoints(this WebApplication app)
         {
-            // --- Endpoint Group ---
-            // We can group related endpoints under a common prefix. Here, all endpoints
-            // inside this group will start with "/schedule".
-            // This helps avoid repetition and organizes the routes logically.
+            // Group: /schedule (legacy in-memory reads)
             var scheduleGroup = app.MapGroup("/schedule");
 
-            // --- ENDPOINT 1: GET /schedule ---
-            // The simplest endpoint. It returns the entire 7-day schedule object.
-            // This is useful for a client that wants to get all data at once.
+            // GET /schedule => return the whole in-memory 7-day schedule (Models/ScheduleModels.cs)
             scheduleGroup.MapGet("/", (ScheduleData schedule) =>
             {
-                // The 'schedule' parameter is automatically provided by ASP.NET Core's
-                // Dependency Injection system. We registered it as a service in Program.cs.
+                // 'schedule' is injected (registered in Program.cs as a singleton).
                 return Results.Ok(schedule);
             });
 
-            // --- ENDPOINT 2: GET /schedule/today ---
-            // A more specific endpoint to get only today's schedule.
+            // GET /schedule/today => filter the in-memory schedule to today
             scheduleGroup.MapGet("/today", (ScheduleData schedule) =>
             {
-                // We use LINQ's .FirstOrDefault() to find the day schedule that matches today's date.
-                // LINQ (Language Integrated Query) is a powerful feature in C# for working with collections.
+                // FirstOrDefault: return first match or null if none.
                 DaySchedule? today = schedule.Days
                     .FirstOrDefault(d => d.Date.Date == DateTime.Today);
 
-                // It's important to handle cases where data might not be found.
-                // If 'today' is null, we return a standard HTTP 404 Not Found response.
+                // Not found => 404. Found => 200 with DaySchedule.
                 if (today is null)
                 {
                     return Results.NotFound("No schedule found for today.");
@@ -64,10 +40,7 @@ namespace API.Endpoints
                 return Results.Ok(today);
             });
 
-            // --- ENDPOINT 3: GET /schedule/7days ---
-            // This endpoint demonstrates calling into our "business logic" layer (the Actions.cs file).
-            // The endpoint itself doesn't contain any logic; it just calls a method from ScheduleQueries.
-            // This is a good practice called "Separation of Concerns".
+            // GET /schedule/7days => build a copy of the 7-day view from in-memory data (Actions.cs)
             scheduleGroup.MapGet("/7days", (ScheduleData schedule) =>
             {
                 var sevenDaySchedule = ScheduleQueries.GetSevenDays(schedule);

@@ -1,22 +1,7 @@
 // --- FILE: Endpoints/EventDbEndpoints.cs ---
-//
-// PURPOSE
-// - A parallel set of endpoints that use the database (EF Core) instead of the in-memory schedule.
-// - Each endpoint returns 501 (Not Implemented) until you wire in the calls to EventActionsDb.
-//
-// SYNTAX PRIMER (Minimal APIs quick tour)
-// - Route groups: 'var group = app.MapGroup("/db/event");' prefixes all routes with /db/event.
-// - Model binding: parameters in the lambda are filled from route, query, or body by name/type.
-//   Example: (int eventId) binds {eventId} from the route.
-// - DI for DbContext: add 'SchedulerContext db' as a lambda parameter to get a context per request.
-// - Results helpers: Results.Ok(data), Results.BadRequest(msg), Results.NotFound(msg), Results.StatusCode(501).
-// - Keep endpoints thin: do validation/queries in Actions layer, return the translated Result here.
-//
-// HOW TO FILL IN
-// - Replace the 501 bodies with simple calls to EventActionsDb.* methods.
-// - Inject SchedulerContext by adding it as a parameter to the lambda (Minimal APIs will provide it).
-// - Keep the logic very small inside the endpoint; push work into EventActionsDb.
-
+// Beginner view: endpoints that WRITE bookings to the database (EF Core).
+// - I receive simple parameters, call Actions/EventActionsDb.cs, and return Results.*
+// - Group prefix: /db/event
 using API.Data; // SchedulerContext
 using API.Models; // EventEntity
 using API.Actions; // EventActionsDb
@@ -30,21 +15,21 @@ namespace API.Endpoints
             // Group all DB event endpoints under /db/event
             var group = app.MapGroup("/db/event");
 
-            // GET /db/event => list all persisted bookings
+            // GET /db/event => I read all rows (Actions/EventActionsDb.ListEvents) and return them
             group.MapGet("/", (SchedulerContext db) =>
             {
                 var events = EventActionsDb.ListEvents(db);
                 return Results.Ok(events);
             });
 
-            // GET /db/event/{eventId} => details of one booking
+            // GET /db/event/{eventId} => I find one row by Id using db.Events.Find(id)
             group.MapGet("/{eventId}", (int eventId, SchedulerContext db) =>
             {
                 var e = db.Events.Find(eventId);
                 return e is null ? Results.NotFound($"No event with id {eventId}") : Results.Ok(e);
             });
 
-            // POST /db/event/post => create a booking (returns new Id)
+            // POST /db/event/post => I create a booking (Actions/EventActionsDb.CreateEvent) and return new Id
             group.MapPost("/post", (DateTime date, int hour, int startMinute, int endMinute, SchedulerContext db) =>
             {
                 int id = EventActionsDb.CreateEvent(db, date, hour, startMinute, endMinute);
@@ -53,14 +38,14 @@ namespace API.Endpoints
                     : Results.Ok(new { EventId = id });
             });
 
-            // POST /db/event/{eventId}/reschedule => change time
+            // POST /db/event/{eventId}/reschedule => I change a booking's time (Actions/EventActionsDb.RescheduleEvent)
             group.MapPost("/{eventId}/reschedule", (int eventId, DateTime newDate, int newHour, int newStartMinute, int newEndMinute, SchedulerContext db) =>
             {
                 bool ok = EventActionsDb.RescheduleEvent(db, eventId, newDate, newHour, newStartMinute, newEndMinute);
                 return ok ? Results.Ok() : Results.BadRequest("Reschedule failed (conflict or invalid id)");
             });
 
-            // POST /db/event/{eventId}/delete => remove booking
+            // POST /db/event/{eventId}/delete => I delete a booking by Id (Actions/EventActionsDb.DeleteEvent)
             group.MapPost("/{eventId}/delete", (int eventId, SchedulerContext db) =>
             {
                 bool ok = EventActionsDb.DeleteEvent(db, eventId);

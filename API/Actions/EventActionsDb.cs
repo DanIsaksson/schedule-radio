@@ -1,34 +1,10 @@
 // --- FILE: Actions/EventActionsDb.cs
-//
-// PURPOSE
-// - Database-backed equivalents of the current in-memory event actions.
-// - These methods are intentionally left as guided skeletons so you can compare EF persistence against the in-memory path.
-//
-// HOW TO USE
-// - Inject SchedulerContext (db) into endpoints and call these methods while watching how EF tracks entity state.
-// - Use simple, synchronous EF calls (ToList, Find, Add, Remove, SaveChanges) before experimenting with async or tracking tweaks.
-//
-// SYNTAX PRIMER (read once, then implement TODOs below)
-// - DbContext & DbSet<T> basics:
-//     db.Events.Add(entity);   // stage an INSERT of one row
-//     db.Events.Remove(entity);// stage a DELETE of one row
-//     db.SaveChanges();        // COMMIT all staged changes to the database
-//
-// - LINQ filter pattern (requires 'using System.Linq;'):
-//     var rows = db.Events.Where(e => e.Hour == 10).ToList();
-//     // e => e.Hour == 10  means: for each row e, keep it if this expression is true.
-//     // ToList() executes the query and returns a List<EventEntity>.
-//
-// - Time range overlap rule using half-open intervals [start, end):
-//     Two ranges A=[a1,a2) and B=[b1,b2) DO NOT overlap if a2 <= b1 OR b2 <= a1.
-//     Therefore, they DO overlap if NOT (a2 <= b1 || b2 <= a1).
-//     We'll re-use that exact boolean expression below.
-//
-// - Minimal APIs + DI:
-//     If an endpoint lambda has a parameter 'SchedulerContext db', ASP.NET injects it for you.
-//     You do NOT 'new' the context yourself; the framework manages its lifetime per request. Flip lifetimes in Program.cs to feel the difference between Scoped and Singleton contexts.
-//
-// STEP-BY-STEP HINTS ARE INCLUDED INSIDE EACH METHOD.
+// What this file does (beginner view)
+// - I save and change bookings in the SQLite database using EF Core.
+// - Each public method is one action I can call from an endpoint (create, delete, reschedule, list).
+// How to read this file
+// - Skim the method name first, then read the numbered steps inside it (1..5). Each step says exactly why it exists.
+// - If you see LINQ like .Where(...).ToList(), read it as: "filter rows like this, then run the query now".
 
 using System;
 using System.Collections.Generic;
@@ -58,12 +34,17 @@ namespace API.Actions
             // 3) Check overlap with any existing booking in sameHour:
             foreach (var e in sameHour)
             {
-                // Overlap if NOT (end <= otherStart || otherEnd <= start)
+                // Do these two time ranges overlap? (half-open [start, end))
+                // - startMinute: my new booking start (0..59)
+                // - endMinute: my new booking end   (1..60, must be > start)
+                // - e.StartMinute: existing row start
+                // - e.EndMinute:   existing row end
+                // They overlap if NOT (myEnd <= otherStart || otherEnd <= myStart)
                 bool overlaps = !(endMinute <= e.StartMinute || e.EndMinute <= startMinute);
                 if (overlaps) return -1;
             }
 
-            // 4) Create a new EventEntity, add it, and SaveChanges().
+            // 4) Create a new EventEntity (a single DB row for one booking). See Models/EventEntity.cs for fields.
             var entity = new EventEntity
             {
                 Date = day,

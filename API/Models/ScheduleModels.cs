@@ -1,19 +1,7 @@
 // --- FILE: Models/ScheduleModels.cs ---
-//
-// This file contains the data models for our radio station schedule.
-// We are defining them in a single file for simplicity and to avoid
-// any potential conflicts with the existing Models/ScheduleData.cs file.
-//
-// CONCEPT: CLASSES & PROPERTIES
-// A 'class' is a blueprint for creating objects. It defines the data (properties)
-// and behavior (methods) that objects of that type will have.
-//
-// A 'property' is a member of a class that provides a way to read, write, or compute
-// the value of a private field. Here, we use auto-implemented properties (e.g.,
-// `public List<DaySchedule> Days { get; } = ...;`) which automatically create
-// a private, anonymous backing field that can only be accessed through the property's
-// get and set accessors.
-
+// What this file is (beginner view)
+// - Read model used by endpoints and frontend. It’s a 7-day grid: Days → Hours → Minutes[60].
+// - I keep it simple and compatible with old in-memory code so both admin and consumer UIs can reuse it.
 namespace API.Models // A new namespace to avoid conflicts
 {
     /// <summary>
@@ -21,12 +9,10 @@ namespace API.Models // A new namespace to avoid conflicts
     /// </summary>
     public class ScheduleData
     {
-        // This property is initialized when the object is created.
-        // It creates 7 DaySchedule objects, one for each day starting from today.
+        // I pre-create 7 days starting from today so the frontend always has a full window.
         public List<DaySchedule> Days { get; } = new List<DaySchedule>();
 
-        // Constructor: A special method that is called when an object is created.
-        // It's used to set up the object with initial data.
+        // Constructor: set up the rolling 7-day list.
         public ScheduleData()
         {
             // Create 7 days starting from today
@@ -42,16 +28,16 @@ namespace API.Models // A new namespace to avoid conflicts
     /// </summary>
     public class DaySchedule
     {
-        // The date for this day
+        // Calendar date for this DaySchedule
         public DateTime Date { get; }
 
-        // A list of 24 HourSchedule objects, one for each hour of the day
+        // 24 HourSchedule entries (0..23)
         public List<HourSchedule> Hours { get; } = new List<HourSchedule>();
 
         // Constructor
         public DaySchedule(DateTime date)
         {
-            Date = date.Date; // Ensure we only store the date part, not time
+            Date = date.Date; // Keep only yyyy-MM-dd (drop time-of-day)
 
             // Create 24 hours (0 to 23)
             for (int i = 0; i < 24; i++)
@@ -66,18 +52,17 @@ namespace API.Models // A new namespace to avoid conflicts
     /// </summary>
     public class HourSchedule
     {
-        // The hour of the day (0-23)
+        // Hour of day (0–23)
         public int Hour { get; }
 
-        // An array of 60 booleans to represent each minute.
-        // true = booked, false = free
+        // Minutes[60]: true = booked, false = free. We treat bookings as half-open ranges [start, end).
         public bool[] Minutes { get; } = new bool[60];
 
         // Constructor
         public HourSchedule(int hour)
         {
             Hour = hour;
-            // All minutes are initially free (false)
+            // Start free; projection code flips booked minutes to true (Actions/ScheduleProjectionDb.cs).
             for (int i = 0; i < 60; i++)
             {
                 Minutes[i] = false;

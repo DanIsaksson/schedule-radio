@@ -1,3 +1,4 @@
+// App: I render the public consumer site (read-only) and an admin panel (booking) based on route.
 import React, { useEffect, useState } from 'react'
 
 function HourRow({ hour, minutes }) {
@@ -12,6 +13,7 @@ function HourRow({ hour, minutes }) {
   )
 }
 
+// HourCell: one hour cell; tooltip shows compact booked ranges like "00–15, 30–45"; click can prefill admin form
 function HourCell({ date, hour, minutes, onPick }) {
   const bookedCount = minutes.filter(Boolean).length
   const frac = bookedCount / 60
@@ -39,6 +41,7 @@ function HourCell({ date, hour, minutes, onPick }) {
   )
 }
 
+// DayColumn: mark today for emphasis; render 24 HourCells
 function DayColumn({ day, onPick }) {
   const d = new Date(day.date ?? day.Date)
   const isToday = d.toDateString() === new Date().toDateString()
@@ -56,6 +59,7 @@ function DayColumn({ day, onPick }) {
   )
 }
 
+// WeekGrid: map 7 days → DayColumn. For consumer, onPick is a no-op; for admin, it pre-fills the form.
 function WeekGrid({ week, onPick }) {
   const days = week?.days ?? week?.Days ?? []
   return (
@@ -67,6 +71,7 @@ function WeekGrid({ week, onPick }) {
   )
 }
 
+// Consumer header & nav (public pages only)
 function SiteHeader() {
   return (
     <header className="site-header">
@@ -125,6 +130,7 @@ function FeaturedRow() {
   )
 }
 
+// SchedulePreview (consumer home): compact 7-day grid; link to full schedule
 function SchedulePreview({ week }) {
   const todayIdx = 0
   const days = week?.days ?? week?.Days ?? []
@@ -155,6 +161,7 @@ function SchedulePreview({ week }) {
   )
 }
 
+// AdminPanel: internal page (#/admin). Click a cell to prefill date+hour; submit posts a booking then refreshes.
 function AdminPanel({ week, today, form, onPickHour, onChange, submitBooking, loading, loadToday, error, msg }) {
   return (
     <>
@@ -234,6 +241,7 @@ export default function App({ route = '#/' }) {
   const [posting, setPosting] = useState(false)
   const [msg, setMsg] = useState('')
 
+  // Load today's schedule (DB-backed). Normalizes minute arrays for the Today card.
   const loadToday = async () => {
     setLoading(true); setError(''); setMsg('')
     try {
@@ -253,6 +261,7 @@ export default function App({ route = '#/' }) {
     }
   }
 
+  // Load the 7-day schedule projection (DB-backed) used by both consumer and admin views.
   const loadWeek = async () => {
     setLoading(true); setError('')
     try {
@@ -267,13 +276,16 @@ export default function App({ route = '#/' }) {
     }
   }
 
+  // On mount, fetch both today and week so both routes are fast to show
   useEffect(() => { loadToday(); loadWeek() }, [])
 
+  // Keep booking form in state; cast numeric inputs to numbers
   const onChange = e => {
     const { name, value } = e.target
     setForm(f => ({ ...f, [name]: name === 'hour' || name.includes('Minute') ? Number(value) : value }))
   }
 
+  // Post a booking via query params (beginner-friendly binding). Then refresh Today + Week.
   const submitBooking = async (e) => {
     e.preventDefault()
     setPosting(true); setError(''); setMsg('')
@@ -300,6 +312,7 @@ export default function App({ route = '#/' }) {
     }
   }
 
+  // Route flags (set by main.jsx Router)
   const isHome = route === '#/'
   const isSchedule = route.startsWith('#/schedule')
   const isAdmin = route.startsWith('#/admin')

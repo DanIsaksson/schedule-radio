@@ -1,13 +1,7 @@
 // --- FILE: Endpoints/ScheduleDbEndpoints.cs
-// PURPOSE
-// - Expose DB-backed schedule projections that mirror the in-memory shape
-//   GET /db/schedule/today  => DaySchedule
-//   GET /db/schedule/7days  => ScheduleData
-//
-// Cross-refs:
-// - Uses ScheduleProjectionDb.BuildSevenDaySchedule() and BuildToday() (ScheduleProjectionDb.cs:18–45)
-// - Mapped from Program.cs:XX via app.MapScheduleDbEndpoints()
-
+// Beginner view: endpoints that return schedule read models from the database.
+// - GET /db/schedule/today  => one day
+// - GET /db/schedule/7days  => seven days
 using API.Actions; // ScheduleProjectionDb
 using API.Data; // SchedulerContext
 using API.Models; // ScheduleData, DaySchedule
@@ -20,14 +14,14 @@ namespace API.Endpoints
         {
             var group = app.MapGroup("/db/schedule");
 
-            // GET /db/schedule/today
+            // GET /db/schedule/today (I ask the helper to build only today)
             group.MapGet("/today", (SchedulerContext db) =>
             {
                 DaySchedule? today = ScheduleProjectionDb.BuildToday(db, DateTime.Today);
                 return today is null ? Results.NotFound("No schedule for today") : Results.Ok(today);
             });
 
-            // GET /db/schedule/7days
+            // GET /db/schedule/7days (I ask the helper to build a 7-day window)
             group.MapGet("/7days", (SchedulerContext db) =>
             {
                 ScheduleData all = ScheduleProjectionDb.BuildSevenDaySchedule(db, DateTime.Today);

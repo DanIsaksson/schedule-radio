@@ -34,7 +34,7 @@ button{padding:.5rem 1rem;font-size:1rem;cursor:pointer}
 .alert.error{background:#ffecec;color:#600}
 @media (max-width:800px){.grid{grid-template-columns:1fr}}
 
-/* Consumer site additions */
+/* Consumer site additions (public UI) */
 .container-wide{max-width:1200px;margin:0 auto}
 .site-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem}
 .brand{font-weight:800;font-size:1.25rem}
@@ -60,6 +60,7 @@ button{padding:.5rem 1rem;font-size:1rem;cursor:pointer}
 .link:hover{text-decoration:underline}
 .week-grid.preview .day-grid.preview{grid-template-rows:repeat(24,10px)}
 .week-grid.preview .cell{opacity:.9}
+/* Emphasize today's column so users can orient quickly */
 .day.today{background:rgba(255,106,0,.06);border-radius:6px;padding:.25rem}
 .day.today .day-header{color:var(--accent);font-weight:700}
 
