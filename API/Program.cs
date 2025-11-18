@@ -4,6 +4,7 @@
 // - Read this file top→bottom to see how requests get from the browser to my code.
 // How to read
 // - Each section says what it does and points to the file where the logic lives (tiny refs).
+// - There are two paths: legacy in-memory (/schedule/*) for experiments and DB-backed (/db/*) used by the frontend UI.
 using API.Models; // ScheduleData
 using API.Actions; // Booking
 using API.Endpoints; // MapScheduleEndpoints, MapEventEndpoints, MapEventDbEndpoints
@@ -35,8 +36,7 @@ builder.Services.AddDbContext<SchedulerContext>(options =>
 // Legacy in-memory schedule (singleton). Models/ScheduleModels.cs describes this type.
 // Consumer UI uses DB-backed endpoints; this stays for comparison and simple demos.
 builder.Services.AddSingleton<ScheduleData>();
-
-// Swagger addition
+// Swagger/OpenAPI: generate metadata + a UI to explore and test endpoints.
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -70,7 +70,7 @@ app.UseCors();
 // I keep endpoints in separate files:
 // - Endpoints/ScheduleDbEndpoints.cs => read-only DB schedule (/db/schedule/*)
 // - Endpoints/EventDbEndpoints.cs => DB writes for bookings (/db/event/*)
-// - Endpoints/ScheduleEndpoints.cs & EventEndpoints.cs => legacy in-memory endpoints
+// - Endpoints/ScheduleEndpoints.cs & EventEndpoints.cs => legacy in-memory endpoints for comparison/experiments
 app.MapScheduleEndpoints();
 app.MapEventEndpoints();
 app.MapEventDbEndpoints();
@@ -82,7 +82,7 @@ if (app.Environment.IsDevelopment())
     app.MapSimpleEndpoints();
 }
 
-// Legacy demo endpoint (simple booking against in-memory schedule).
+// Legacy demo endpoint (simple booking against in-memory schedule). Use DB endpoints in real scenarios.
 app.MapPost("/schedule/book", (DateTime date, int hour, int startMinute, int endMinute, bool isBooked, ScheduleData schedule) =>
 {
     bool success = Booking.SendBooking(schedule, date, hour, startMinute, endMinute, isBooked);

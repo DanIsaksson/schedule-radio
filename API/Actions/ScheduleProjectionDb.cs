@@ -53,4 +53,18 @@ namespace API.Actions
             return full.Days.FirstOrDefault(d => d.Date == today.Date);
         }
     }
+
+    // === Experiments: Schedule projection from DB (ScheduleProjectionDb) ===
+    // Experiment 1: Shorten or extend the window.
+    //   Step 1: Change AddDays(7) in BuildSevenDaySchedule to another value (e.g., 3 or 10).
+    //   Step 2: Call /db/schedule/7days and see how many days come back.
+    //   Step 3: Restore the original 7-day window once you understand the impact.
+    // Experiment 2: Date range boundaries.
+    //   Step 1: Temporarily change the filter from (e.Date < endDate) to (e.Date <= endDate) or (e.Date > startDate).
+    //   Step 2: Create bookings on the boundary days and inspect whether they appear twice or disappear.
+    //   Step 3: Restore the original [startDate, endDate) rule to avoid off-by-one bugs.
+    // Experiment 3: Minute painting.
+    //   Step 1: Change the Math.Max/Math.Min or the minute loop in Step D.
+    //   Step 2: Create bookings and compare how cells look in the frontend grid.
+    //   Step 3: Revert to the original painting logic once you've seen the effect.
 }

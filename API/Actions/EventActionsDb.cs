@@ -119,4 +119,18 @@ namespace API.Actions
             return db.Events.ToList();
         }
     }
+
+    // === Experiments: Database-backed booking actions (EventActionsDb) ===
+    // Experiment 1: Overlap rule and conflicts.
+    //   Step 1: In CreateEvent, temporarily relax or remove the overlap check in step 3.
+    //   Step 2: Use /db/event/post to create two overlapping bookings for the same date and hour.
+    //   Step 3: Call /db/schedule/7days and observe how overlapping bookings appear, then restore the original overlap rule.
+    // Experiment 2: Input validation and error responses.
+    //   Step 1: Temporarily tighten or loosen the validation in step 1 (e.g., disallow late hours).
+    //   Step 2: Try to create bookings that violate the new rules and see how /db/event/post responds.
+    //   Step 3: Decide which validation shape you prefer and revert or keep the change.
+    // Experiment 3: Sorting and listing.
+    //   Step 1: In ListEvents, change the query to order events by Date then Hour.
+    //   Step 2: Call GET /db/event and inspect the order in the response.
+    //   Step 3: Compare unsorted vs sorted lists and choose the version that best serves your clients.
 }

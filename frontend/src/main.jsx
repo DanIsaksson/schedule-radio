@@ -23,3 +23,13 @@ createRoot(document.getElementById('root')).render(
     <Router />
   </React.StrictMode>
 )
+
+// === Experiments: Hash-based routing (main.jsx) ===
+// Experiment 1: Add a new route.
+//   Step 1: Update App.jsx to handle a new route flag (e.g. #/lab).
+//   Step 2: Use links or change window.location.hash to "#/lab" and confirm App renders the new view.
+//   Step 3: Keep or remove the new route once you've explored the flow.
+// Experiment 2: Hashchange listener.
+//   Step 1: Temporarily comment out the addEventListener/removeEventListener in Router.
+//   Step 2: Change the URL hash and observe that the UI no longer updates.
+//   Step 3: Restore the listener and confirm navigation works again.

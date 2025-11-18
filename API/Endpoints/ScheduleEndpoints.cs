@@ -1,6 +1,6 @@
 // --- FILE: Endpoints/ScheduleEndpoints.cs ---
 // Beginner view: legacy READ endpoints backed by in-memory ScheduleData (not the DB path).
-// - Useful for demos; consumer UI now uses /db/schedule/* (see ScheduleDbEndpoints.cs).//
+// - Useful for demos; consumer UI now uses /db/schedule/* (see ScheduleDbEndpoints.cs).
 using API; // Use our new models
 using API.Actions; // Keep using the actions from the original file
 using API.Models;

@@ -356,3 +356,17 @@ export default function App({ route = '#/' }) {
     </div>
   )
 }
+
+// === Experiments: Frontend behaviour (App.jsx) ===
+// Experiment 1: API failures and error UI.
+//   Step 1: Temporarily change one fetch URL (e.g. '/db/schedule/today') to an invalid path.
+//   Step 2: Load the app and observe the error message and loading states.
+//   Step 3: Restore the original URL and confirm the UI recovers.
+// Experiment 2: Schedule density visuals.
+//   Step 1: Create many overlapping or adjacent bookings through the admin form.
+//   Step 2: Observe how HourCell colours and tooltips change as booked minutes increase.
+//   Step 3: Adjust the level thresholds in HourCell if you want different visual cut-offs.
+// Experiment 3: Routes and layout.
+//   Step 1: Add a new route flag derived from `route` (e.g. `isLab`).
+//   Step 2: Render a small diagnostic section when that flag is true.
+//   Step 3: Navigate via hash and confirm that Router + App work together to show the new view.

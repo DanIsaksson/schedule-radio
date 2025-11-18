@@ -9,7 +9,7 @@ public static class Booking
 {
     /// <summary>
     /// Attempts to book (or free) a range of minutes within a given hour on a specific date.
-    /// Push the boundaries by changing the validation rules and seeing how downstream endpoints respond.
+    /// Used by legacy in-memory endpoints for demos and experiments.
     /// </summary>
     /// <param name="schedule">The in-memory seven-day rolling schedule.</param>
     /// <param name="date">Date we want to modify (only the Date part is considered).</param>
@@ -26,14 +26,14 @@ public static class Booking
         int endMinute,
         bool isBooked)
     {
-        // Basic validation. Try loosening these guards to watch how edge-case inputs ripple into the UI.
+        // Basic validation: reject out-of-range hours/minutes and inverted ranges.
 
         if (schedule is null) return false;
         if (hour is < 0 or > 23) return false;
         if (startMinute is < 0 or >= 60) return false;
         if (endMinute <= startMinute || endMinute > 60) return false;
 
-        // Find the correct day in the rolling 7-day window; expand the window length in `ScheduleData` to test limits.
+        // Find the matching day in the seven-day window; if the date is outside this window, return false.
 
         DaySchedule? day = schedule.Days.FirstOrDefault(d => d.Date.Date == date.Date);
         if (day is null) return false; // outside current window
@@ -42,8 +42,7 @@ public static class Booking
         HourSchedule? hourSlot = day.Hours.FirstOrDefault(h => h.Hour == hour);
         if (hourSlot is null) return false;
 
-        // Conflict detection: if we are booking, ensure all minutes are free.
-        // Replace this with a "priority" system (allow overlaps but flag them) to experiment with conflict resolution strategies.
+        // Conflict detection: if we are booking, ensure all minutes in [startMinute, endMinute) are free.
 
         if (isBooked)
         {
@@ -53,7 +52,7 @@ public static class Booking
             }
         }
 
-        // Apply booking or freeing. Flip the boolean so `true` frees slots to confirm clients depend on semantic meaning.
+        // Apply booking or freeing by setting minutes to true (booked) or false (free).
 
         for (int m = startMinute; m < endMinute; m++)
         {
@@ -63,6 +62,20 @@ public static class Booking
         return true;
     }
 }
+
+// === Experiments: In-memory booking behaviour (legacy path) ===
+// Experiment 1: Relax validation rules and observe invalid bookings.
+//   Step 1: Temporarily loosen the guards in SendBooking (hour/minute checks) to allow out-of-range values.
+//   Step 2: Call the legacy /schedule/event/post endpoint with invalid hours or minutes.
+//   Step 3: Inspect how the in-memory schedule and any consumers render these bookings, then restore the original guards.
+// Experiment 2: Allow overlapping bookings for the same hour.
+//   Step 1: In SendBooking, remove or modify the loop that rejects already-booked minutes.
+//   Step 2: Create two bookings that overlap in time via /schedule/event/post.
+//   Step 3: Observe how hourly cells are rendered when multiple bookings share minutes, then restore the conflict rule.
+// Experiment 3: Change the length of the rolling 7-day window.
+//   Step 1: In ScheduleData (Models/ScheduleModels.cs), adjust the constructor to create more or fewer than 7 days.
+//   Step 2: Rebuild and call /schedule/7days and the DB-backed /db/schedule/7days endpoints.
+//   Step 3: Compare how consumers behave when the window size differs between in-memory and DB projections.
 
 public record EventSummary(DateTime Date, int Hour, int StartMinute, int EndMinute);
 
