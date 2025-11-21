@@ -1,6 +1,7 @@
 // --- FILE: Endpoints/ScheduleEndpoints.cs ---
-// Beginner view: legacy READ endpoints backed by in-memory ScheduleData (not the DB path).
-// - Useful for demos; consumer UI now uses /db/schedule/* (see ScheduleDbEndpoints.cs).
+// A.5a Legacy READ endpoints backed by in-memory ScheduleData (not the DB path).
+// - These /schedule/* routes expose the in-memory "whiteboard" schedule described in Program.cs A.5 and Models/ScheduleModels.cs A.3a.
+// - Useful for demos and labs; consumer/React UI now uses the DB-backed /db/schedule/* endpoints (see ScheduleDbEndpoints.cs).
 using API; // Use our new models
 using API.Actions; // Keep using the actions from the original file
 using API.Models;
@@ -12,7 +13,7 @@ namespace API.Endpoints
         // Extension method: I attach these routes to WebApplication (app).
         public static void MapScheduleEndpoints(this WebApplication app)
         {
-            // Group: /schedule (legacy in-memory reads)
+            // Group: /schedule (legacy in-memory reads) [B.25b]
             var scheduleGroup = app.MapGroup("/schedule");
 
             // GET /schedule => return the whole in-memory 7-day schedule (Models/ScheduleModels.cs)

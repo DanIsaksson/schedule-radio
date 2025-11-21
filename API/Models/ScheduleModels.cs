@@ -1,7 +1,8 @@
 // --- FILE: Models/ScheduleModels.cs ---
-// What this file is (beginner view)
-// - Read model used by endpoints and frontend. It’s a 7-day grid: Days → Hours → Minutes[60].
-// - I keep it simple and compatible with old in-memory code so both admin and consumer UIs can reuse it.
+// A.3a Minute-grid structure: 7-day schedule grid model: Days → Hours → Minutes[60] (true = booked, false = free).
+// - This is the concrete data shape behind Program.cs A.3 (7 days of minute-level radio schedule).
+// - Used by ScheduleProjectionDb when building /db/schedule/today and /db/schedule/7days responses [A.3b].
+// - Kept compatible with the legacy in-memory structure so both admin and consumer UIs can reuse it.
 namespace API.Models // A new namespace to avoid conflicts
 {
     /// <summary>
@@ -9,7 +10,8 @@ namespace API.Models // A new namespace to avoid conflicts
     /// </summary>
     public class ScheduleData
     {
-        // I pre-create 7 days starting from today so the frontend always has a full window.
+        // Pre-create 7 days starting from today so the frontend always has a full window.
+        // ScheduleProjectionDb then paints bookings into these DaySchedule objects.
         public List<DaySchedule> Days { get; } = new List<DaySchedule>();
 
         // Constructor: set up the rolling 7-day list.
@@ -34,7 +36,7 @@ namespace API.Models // A new namespace to avoid conflicts
         // 24 HourSchedule entries (0..23)
         public List<HourSchedule> Hours { get; } = new List<HourSchedule>();
 
-        // Constructor
+        // Constructor: set up this day's 24 HourSchedule entries.
         public DaySchedule(DateTime date)
         {
             Date = date.Date; // Keep only yyyy-MM-dd (drop time-of-day)
@@ -55,7 +57,8 @@ namespace API.Models // A new namespace to avoid conflicts
         // Hour of day (0–23)
         public int Hour { get; }
 
-        // Minutes[60]: true = booked, false = free. We treat bookings as half-open ranges [start, end).
+        // A.3a Minutes[60]: true = booked, false = free. We treat bookings as half-open ranges [start, end).
+        // - Matches the meaning described in Program.cs A.3 (true = show/host booked, false = default music).
         public bool[] Minutes { get; } = new bool[60];
 
         // Constructor

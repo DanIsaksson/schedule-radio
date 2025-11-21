@@ -1,7 +1,9 @@
-// --- FILE: Endpoints/ScheduleDbEndpoints.cs
-// Beginner view: endpoints that return schedule read models from the database.
-// - GET /db/schedule/today  => one day (used for the Today card in the UI)
-// - GET /db/schedule/7days  => seven days (used for the week grid views)
+// [Endpoint.Schedule.1] Schedule Endpoints
+// These endpoints are the "Doors" that the frontend uses to READ the schedule.
+// They use the database (via ScheduleProjectionDb) to get the data.
+//
+// -> See Lesson: Interactive-Lesson/04-DB-Booking-CRUD.md (and 05-Schedule-Projection.md)
+
 using API.Actions; // ScheduleProjectionDb
 using API.Data; // SchedulerContext
 using API.Models; // ScheduleData, DaySchedule
@@ -14,14 +16,18 @@ namespace API.Endpoints
         {
             var group = app.MapGroup("/db/schedule");
 
-            // GET /db/schedule/today (I ask the helper to build only today)
+            // [Endpoint.Schedule.2] Get Today's Schedule
+            // URL: GET /db/schedule/today
+            // Returns: A single DaySchedule object for today.
             group.MapGet("/today", (SchedulerContext db) =>
             {
                 DaySchedule? today = ScheduleProjectionDb.BuildToday(db, DateTime.Today);
                 return today is null ? Results.NotFound("No schedule for today") : Results.Ok(today);
             });
 
-            // GET /db/schedule/7days (I ask the helper to build a 7-day window)
+            // [Endpoint.Schedule.3] Get 7-Day Schedule
+            // URL: GET /db/schedule/7days
+            // Returns: A ScheduleData object containing 7 days of data.
             group.MapGet("/7days", (SchedulerContext db) =>
             {
                 ScheduleData all = ScheduleProjectionDb.BuildSevenDaySchedule(db, DateTime.Today);
@@ -31,6 +37,7 @@ namespace API.Endpoints
     }
 
     // === Experiments: Database schedule endpoints (/db/schedule/*) ===
+    // Lab ideas for exploring different windows and date boundaries; not required for the core app.
     // Experiment 1: Today vs week alignment.
     //   Step 1: Temporarily change BuildToday to call BuildSevenDaySchedule with a different start date.
     //   Step 2: Call /db/schedule/today and /db/schedule/7days and compare the returned dates.

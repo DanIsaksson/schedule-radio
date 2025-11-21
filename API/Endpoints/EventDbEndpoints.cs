@@ -1,7 +1,7 @@
 // --- FILE: Endpoints/EventDbEndpoints.cs ---
-// Beginner view: endpoints that WRITE bookings to the SQLite database (EF Core).
-// - I receive simple parameters, call Actions/EventActionsDb.cs, and return Results.*
-// - Group prefix: /db/event (used by the real frontend for booking operations).
+// Beginner view: HTTP "doors" that WRITE bookings to the SQLite database (EF Core).
+// - Each endpoint takes simple parameters, calls Actions/EventActionsDb, and returns an HTTP result.
+// - Group prefix: /db/event (this is what the real frontend admin flow uses for bookings).
 using API.Data; // SchedulerContext
 using API.Models; // EventEntity
 using API.Actions; // EventActionsDb
@@ -15,21 +15,23 @@ namespace API.Endpoints
             // Group all DB event endpoints under /db/event
             var group = app.MapGroup("/db/event");
 
-            // GET /db/event => I read all rows (Actions/EventActionsDb.ListEvents) and return them
+            // GET /db/event -> list all bookings from the DB using EventActionsDb.ListEvents (good starting point to inspect data)
             group.MapGet("/", (SchedulerContext db) =>
             {
                 var events = EventActionsDb.ListEvents(db);
                 return Results.Ok(events);
             });
 
-            // GET /db/event/{eventId} => I find one row by Id using db.Events.Find(id)
+            // GET /db/event/{eventId} -> look up a single booking by Id using db.Events.Find; 404 if it does not exist
             group.MapGet("/{eventId}", (int eventId, SchedulerContext db) =>
             {
                 var e = db.Events.Find(eventId);
                 return e is null ? Results.NotFound($"No event with id {eventId}") : Results.Ok(e);
             });
 
-            // POST /db/event/post => I create a booking (Actions/EventActionsDb.CreateEvent) and return new Id
+            // B.15a POST /db/event/post -> backend "door" for the booking creation flow.
+            // - Called by the React admin flow handler App.jsx submitBooking [B.15].
+            // - Delegates to EventActionsDb.CreateEvent [B.15b] to validate, check overlaps, and write the booking row.
             group.MapPost("/post", (DateTime date, int hour, int startMinute, int endMinute, SchedulerContext db) =>
             {
                 int id = EventActionsDb.CreateEvent(db, date, hour, startMinute, endMinute);
@@ -38,14 +40,14 @@ namespace API.Endpoints
                     : Results.Ok(new { EventId = id });
             });
 
-            // POST /db/event/{eventId}/reschedule => I change a booking's time (Actions/EventActionsDb.RescheduleEvent)
+            // POST /db/event/{eventId}/reschedule -> change a booking's time via EventActionsDb.RescheduleEvent (same overlap rules as CreateEvent)
             group.MapPost("/{eventId}/reschedule", (int eventId, DateTime newDate, int newHour, int newStartMinute, int newEndMinute, SchedulerContext db) =>
             {
                 bool ok = EventActionsDb.RescheduleEvent(db, eventId, newDate, newHour, newStartMinute, newEndMinute);
                 return ok ? Results.Ok() : Results.BadRequest("Reschedule failed (conflict or invalid id)");
             });
 
-            // POST /db/event/{eventId}/delete => I delete a booking by Id (Actions/EventActionsDb.DeleteEvent)
+            // POST /db/event/{eventId}/delete -> delete a booking by Id via EventActionsDb.DeleteEvent
             group.MapPost("/{eventId}/delete", (int eventId, SchedulerContext db) =>
             {
                 bool ok = EventActionsDb.DeleteEvent(db, eventId);
@@ -55,6 +57,7 @@ namespace API.Endpoints
     }
 
     // === Experiments: Database event endpoints (/db/event/*) ===
+    // Lab ideas for exploring API design; they are not required for the app to run.
     // Experiment 1: Conflict status codes.
     //   Step 1: In the POST /db/event/post handler, change BadRequest to Conflict (409) for id == -1.
     //   Step 2: Create an overlapping booking and inspect how clients react to 400 vs 409.

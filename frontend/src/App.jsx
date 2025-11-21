@@ -1,100 +1,243 @@
-// App: I render the public consumer site (read-only) and an admin panel (booking) based on route.
+// A.1 App.jsx – Main "View + Controller" for the Radio Scheduler frontend.
+// - Renders the public website (Home, Schedule) and the internal Admin panel for bookings.
+// - Talks to the ASP.NET Core backend using fetch('/db/...') to load schedules and create bookings.
+// - Ties into codemaps:
+//   * "React Radio Scheduler Application Bootstrap and Navigation Flow" (how Router passes route here) [B.5*].
+//   * "Schedule Data Loading Flow - React Frontend to Database Backend" (how we call /db/schedule/* and update state) [B.10*].
+//   * "Radio Scheduler Booking Creation Flow" (admin form → /db/event/post → DB → UI refresh) [B.15*].
+
+// C.1 React hooks analogy for this file:
+// - useState = the component's **memory** about changing data (today, week, form fields, errors).
+// - useEffect = doing things with the **Outside World** (HTTP calls to the backend) after React draws the UI.
 import React, { useEffect, useState } from 'react'
 
+/**
+ * A.2 HourRow Component
+ * 
+ * Represents a single row in the Admin "Today" view.
+ * - Shows one hour label (e.g., 09:00) and how many of its 60 minutes are booked.
+ * - Uses the same minute-grid idea as the backend ScheduleData (7 days × 24 hours × 60 minutes).
+ * - [A.3c] UI view of the minute grid defined in Program.cs A.3 and Models/ScheduleModels.cs A.3a, painted by ScheduleProjectionDb A.3b.
+ * 
+ * B.1 Data flow:
+ * - Props come from the `today` object in App component.
+ * - `today` is built from the /db/schedule/today endpoint (codemap: Schedule Data Loading Flow → Today Schedule API Call).
+ * - `minutes` is an array of 60 booleans:
+ *     false = default music is playing (no program booked).
+ *     true  = some show/host is booked for that minute in the studio.
+ * 
+ * Props (Parameters):
+ * - hour: The hour number (0-23).
+ * - minutes: The 60-minute booking array described above.
+ */
 function HourRow({ hour, minutes }) {
-  const booked = minutes.some(m => m)
-  const hh = String(hour).padStart(2, '0')
+  // C.2 JS Array.prototype.some: "Does ANY element pass this test?"
+  // - minutes.some(isBooked => isBooked) returns true if at least one minute is booked.
+  // - C# LINQ equivalent: minutes.Any(m => m == true).
+  const isAnyMinuteBooked = minutes.some(isBooked => isBooked)
+
+  // C.3 Format the hour to always have 2 digits for the radio clock (e.g., 9 → "09").
+  const formattedHour = String(hour).padStart(2, '0')
+
   return (
     <li className="row">
-      <span className="time">{hh}:00</span>
-      <span className={`status ${booked ? 'booked' : 'free'}`}>{booked ? 'Booked' : 'Free'}</span>
+      <span className="time">{formattedHour}:00</span>
+      {/* C.4 Conditional styling with a ternary expression (like C#: condition ? trueResult : falseResult). */}
+      <span className={`status ${isAnyMinuteBooked ? 'booked' : 'free'}`}>
+        {isAnyMinuteBooked ? 'Bokad' : 'Ledig'}
+      </span>
+      {/* C.5 Count how many minutes are booked (true). C# LINQ equivalent: minutes.Count(m => m). */}
       <span className="count">{minutes.filter(Boolean).length}/60</span>
     </li>
   )
 }
 
-// HourCell: one hour cell; tooltip shows compact booked ranges like "00–15, 30–45"; click can prefill admin form
+/**
+ * A.3 HourCell Component
+ * 
+ * One square in the weekly grid that represents a single hour for a given day.
+ * - Visually encodes how "busy" the hour is (free/partial/busy) so producers see density at a glance.
+ * - Generates a tooltip listing the booked ranges within the hour (e.g., 00–15, 30–45).
+ * 
+ * B.2 Domain tie-in:
+ * - Minutes that are not booked fall back to the station's default music.
+ * - Booked ranges represent shows/segments/guests in a studio, using the same minute grid as the backend.
+ * - [A.3c] Visualizes the same minute-grid structure as HourRow and the backend A.3/A.3a/A.3b.
+ */
 function HourCell({ date, hour, minutes, onPick }) {
-  const bookedCount = minutes.filter(Boolean).length
-  const frac = bookedCount / 60
-  const level = frac === 0 ? 'free' : frac < 0.5 ? 'partial' : 'busy'
-  // Build tooltip with booked ranges in minutes, e.g. "00–15, 30–45"
-  let ranges = []
-  let i = 0
-  while (i < 60) {
-    if (minutes[i]) {
-      const start = i
-      while (i < 60 && minutes[i]) i++
-      const end = i
-      const fmt = (n) => String(n).padStart(2, '0')
-      ranges.push(`${fmt(start)}–${fmt(end)}`)
+  // Calculate how many minutes are booked.
+  const bookedMinutesCount = minutes.filter(Boolean).length
+
+  // Calculate the fraction of the hour that is booked (0.0 to 1.0).
+  const bookedFraction = bookedMinutesCount / 60
+
+  // Determine the visual style based on how busy the hour is.
+  // This is simple logic: empty -> free, less than half -> partial, more -> busy.
+  const statusLevel = bookedFraction === 0 ? 'free' : bookedFraction < 0.5 ? 'partial' : 'busy'
+
+  // B.3 Build a tooltip string that shows booked ranges (e.g., "00–15, 30–45").
+  // - This loop walks the 60-minute array and groups consecutive true values into ranges.
+  let bookedRanges = []
+  let currentMinuteIndex = 0
+
+  // C.6 While loop: standard iteration, similar to while(...) { ... } in C#.
+  while (currentMinuteIndex < 60) {
+    if (minutes[currentMinuteIndex]) {
+      // Found the start of a booked range
+      const startMinute = currentMinuteIndex
+
+      // Continue until we find a free minute or reach the end of the hour
+      while (currentMinuteIndex < 60 && minutes[currentMinuteIndex]) {
+        currentMinuteIndex++
+      }
+      const endMinute = currentMinuteIndex
+
+      // C.7 Helper function: format numbers as two digits using padStart.
+      const formatTwoDigits = (n) => String(n).padStart(2, '0')
+
+      // Add the range string to our list
+      bookedRanges.push(`${formatTwoDigits(startMinute)}–${formatTwoDigits(endMinute)}`)
     } else {
-      i++
+      // Minute is free, move to the next one
+      currentMinuteIndex++
     }
   }
-  const hh = String(hour).padStart(2, '0')
-  const tip = ranges.length
-    ? `${hh}:00  ${bookedCount}/60 booked · ${ranges.join(', ')}`
-    : `${hh}:00  ${bookedCount}/60 booked`
+
+  const formattedHour = String(hour).padStart(2, '0')
+
+  // B.4 Create the final tooltip text for the user.
+  // - If there are booked ranges, show them; otherwise just show booked count.
+  const tooltipText = bookedRanges.length
+    ? `${formattedHour}:00  ${bookedMinutesCount}/60 bokad · ${bookedRanges.join(', ')}`
+    : `${formattedHour}:00  ${bookedMinutesCount}/60 bokad`
+
+  // C.8 onClick handler: when the cell is clicked, call onPick(date, hour) from the parent.
+  // - In the Admin panel this is used to pre-fill the booking form for that hour.
   return (
-    <div className={`cell ${level}`} title={tip} onClick={() => onPick(date, hour)} />
+    <div
+      className={`cell ${statusLevel}`}
+      title={tooltipText}
+      onClick={() => onPick(date, hour)}
+    />
   )
 }
 
-// DayColumn: mark today for emphasis; render 24 HourCells
+/**
+ * A.4 DayColumn Component
+ * 
+ * Renders one vertical column for a specific calendar day, containing 24 HourCell components.
+ * 
+ * B.5 Data flow:
+ * - `day` comes from the 7-day schedule structure fetched by App.loadWeek (codemap: Schedule Data Loading Flow).
+ * - It may use either `day.date` or `day.Date` depending on how the backend serialized the JSON.
+ */
 function DayColumn({ day, onPick }) {
-  const d = new Date(day.date ?? day.Date)
-  const isToday = d.toDateString() === new Date().toDateString()
-  const dateStr = d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })
-  const hours = (day.hours ?? day.Hours ?? []).map(h => ({ hour: h.hour ?? h.Hour, minutes: h.minutes ?? h.Minutes }))
+  // Create a Date object from the day's data.
+  // The '??' operator (Null Coalescing) works exactly like in C#.
+  // It checks 'day.date', and if it's null, it uses 'day.Date' (handles case sensitivity differences).
+  const dateObject = new Date(day.date ?? day.Date)
+
+  // Check if this column represents the current actual date (Today).
+  const isToday = dateObject.toDateString() === new Date().toDateString()
+
+  // Format the date for display (e.g., "Mon, Nov 18").
+  const formattedDateString = dateObject.toLocaleDateString('sv-SE', { weekday: 'short', month: 'short', day: 'numeric' })
+
+  // B.6 Normalize the hours data from the API.
+  // - We use Array.map (like LINQ Select) to transform raw hour objects into a consistent structure.
+  // - Handles capitalization differences from the backend (hour vs Hour, minutes vs Minutes).
+  const hours = (day.hours ?? day.Hours ?? []).map(hourData => ({
+    hour: hourData.hour ?? hourData.Hour,
+    minutes: hourData.minutes ?? hourData.Minutes
+  }))
+
   return (
     <div className={`day ${isToday ? 'today' : ''}`}>
-      <div className="day-header">{dateStr}</div>
+      <div className="day-header">{formattedDateString}</div>
       <div className="day-grid">
-        {hours.map(h => (
-          <HourCell key={h.hour} date={day.date ?? day.Date} hour={h.hour} minutes={h.minutes} onPick={onPick} />
+        {hours.map(hourData => (
+          <HourCell
+            key={hourData.hour}
+            date={day.date ?? day.Date}
+            hour={hourData.hour}
+            minutes={hourData.minutes}
+            onPick={onPick}
+          />
         ))}
       </div>
     </div>
   )
 }
 
-// WeekGrid: map 7 days → DayColumn. For consumer, onPick is a no-op; for admin, it pre-fills the form.
+/**
+ * A.5 WeekGrid Component
+ * 
+ * Renders the 7-day schedule view by mapping the week's data to DayColumn components.
+ * - This visualizes the same 7-day window the backend builds in ScheduleProjectionDb.BuildSevenDaySchedule.
+ * 
+ * B.7 Data source:
+ * - `week` comes from App.loadWeek, which calls /db/schedule/7days on the backend.
+ */
 function WeekGrid({ week, onPick }) {
+  // C.9 Safe navigation: week?.days is like C#'s ?. operator; if week is null, result is undefined.
   const days = week?.days ?? week?.Days ?? []
+
   return (
     <div className="week-grid">
-      {days.map(d => (
-        <DayColumn key={d.date ?? d.Date} day={d} onPick={onPick} />
+      {/* Iterate over each day and render a DayColumn */}
+      {days.map(dayData => (
+        <DayColumn
+          key={dayData.date ?? dayData.Date}
+          day={dayData}
+          onPick={onPick}
+        />
       ))}
     </div>
   )
 }
 
-// Consumer header & nav (public pages only)
+/**
+ * SiteHeader Component
+ * 
+ * Navigation bar visible on public pages.
+ * It uses simple anchor tags (#/...) for navigation, which our Router (in main.jsx) listens to.
+ */
 function SiteHeader() {
   return (
     <header className="site-header">
       <div className="brand">Radio<span className="accent">Play</span></div>
       <nav className="nav">
-        <a href="#/">Home</a>
-        <a href="#/schedule">Schedule</a>
-        <a href="#/shows" aria-disabled>Shows</a>
-        <a href="#/podcasts" aria-disabled>Podcasts</a>
+        <a href="#/">Hem</a>
+        <a href="#/schedule">Tablå</a>
+        {/* aria-disabled: Tells screen readers that these links are not active yet */}
+        <a href="#/shows" aria-disabled>Program</a>
+        <a href="#/podcasts" aria-disabled>Poddar</a>
       </nav>
     </header>
   )
 }
 
+/**
+ * SiteFooter Component
+ * 
+ * Simple footer with dynamic year.
+ */
 function SiteFooter() {
   return (
     <footer className="site-footer">
+      {/* JavaScript expression inside {} to get the current year */}
       <div>© {new Date().getFullYear()} RadioPlay</div>
       <div className="socials">•</div>
     </footer>
   )
 }
 
+/**
+ * HeroNowPlaying Component
+ * 
+ * A static "Hero" section (banner) showing what's currently playing.
+ * In a real app, this data would likely come from an API (props), but here it's hardcoded.
+ */
 function HeroNowPlaying() {
   return (
     <section className="hero">
@@ -102,27 +245,29 @@ function HeroNowPlaying() {
       <div className="hero-meta">
         <div className="badge-live">LIVE</div>
         <h1>Morning Energy with Alex</h1>
-        <p className="muted">Weekdays 06:00–10:00 · Host: Alex</p>
-        <a className="btn-accent" href="#/">▶ Play</a>
+        <p className="muted">Vardagar 06:00–10:00 · Värd: Alex</p>
+        <a className="btn-accent" href="#/">▶ Spela</a>
       </div>
     </section>
   )
 }
 
 function FeaturedRow() {
-  const items = [
+  const featuredItems = [
     { id: 1, title: 'Drive Time', time: '16:00', img: '' },
     { id: 2, title: 'Late Night Chill', time: '22:00', img: '' },
     { id: 3, title: 'Top 40', time: '12:00', img: '' },
   ]
+
   return (
     <section className="featured container-wide">
-      {items.map(i => (
-        <div className="card card-shadow" key={i.id}>
+      {/* Render a list of cards. 'key' is required by React for performance (like a primary key). */}
+      {featuredItems.map(item => (
+        <div className="card card-shadow" key={item.id}>
           <div className="thumb" />
           <div className="card-meta">
-            <h3>{i.title}</h3>
-            <p className="muted">Today {i.time}</p>
+            <h3>{item.title}</h3>
+            <p className="muted">Idag {item.time}</p>
           </div>
         </div>
       ))}
@@ -130,28 +275,42 @@ function FeaturedRow() {
   )
 }
 
-// SchedulePreview (consumer home): compact 7-day grid; link to full schedule
+/**
+ * SchedulePreview Component
+ * 
+ * A compact view of the schedule for the home page.
+ */
 function SchedulePreview({ week }) {
-  const todayIdx = 0
+  const todayIndex = 0
   const days = week?.days ?? week?.Days ?? []
+
+  // Take only the first 7 days (in case the API returns more).
+  // C# LINQ: days.Take(7).ToList()
   const daysShort = days.slice(0, 7)
+
   return (
     <section className="schedule-preview container-wide">
       <div className="preview-header">
-        <h2>On Air This Week</h2>
-        <a href="#/schedule" className="link">Full schedule →</a>
+        <h2>Sänds denna vecka</h2>
+        <a href="#/schedule" className="link">Hela tablån →</a>
       </div>
       <div className="week-grid preview">
-        {daysShort.map((d, idx) => (
-          <div className={`day ${idx===todayIdx?'today':''}`} key={d.date ?? d.Date}>
+        {daysShort.map((day, index) => (
+          <div className={`day ${index === todayIndex ? 'today' : ''}`} key={day.date ?? day.Date}>
             <div className="day-header">
-              {new Date(d.date ?? d.Date).toLocaleDateString(undefined,{weekday:'short'})}
+              {new Date(day.date ?? day.Date).toLocaleDateString('sv-SE', { weekday: 'short' })}
             </div>
             <div className="day-grid preview">
-              {(d.hours ?? d.Hours ?? []).map(h => {
-                const minutes = h.minutes ?? h.Minutes
-                const booked = minutes.some(Boolean)
-                return <div key={h.hour ?? h.Hour} className={`cell ${booked?'busy':'free'}`} />
+              {/* Normalize nested hours/minutes data just like in DayColumn */}
+              {(day.hours ?? day.Hours ?? []).map(hourData => {
+                const minutes = hourData.minutes ?? hourData.Minutes
+                const isBooked = minutes.some(Boolean)
+                return (
+                  <div
+                    key={hourData.hour ?? hourData.Hour}
+                    className={`cell ${isBooked ? 'busy' : 'free'}`}
+                  />
+                )
               })}
             </div>
           </div>
@@ -161,107 +320,168 @@ function SchedulePreview({ week }) {
   )
 }
 
-// AdminPanel: internal page (#/admin). Click a cell to prefill date+hour; submit posts a booking then refreshes.
-function AdminPanel({ week, today, form, onPickHour, onChange, submitBooking, loading, loadToday, error, msg }) {
+/**
+ * AdminPanel Component
+ * 
+ * The "Dashboard" for internal users to manage bookings.
+ * It receives data (week, today) and actions (submitBooking, loadToday) as props from the App component.
+ * This is a "Controlled Component" because the form state is managed by React (passed down via 'form' prop).
+ */
+function AdminPanel({ week, today, form, onPickHour, onChange, submitBooking, loading, loadToday, error, successMessage }) {
   return (
     <>
+      {/* Toolbar Section */}
       <section className="controls">
         <button onClick={loadToday} disabled={loading}>
-          {loading ? 'Loading…' : 'Refresh Today'}
+          {loading ? 'Laddar…' : 'Uppdatera Idag'}
         </button>
       </section>
 
-      {error && <div className="alert error">Error: {error}</div>}
-      {msg && <div className="alert ok">{msg}</div>}
+      {/* Feedback Section: Show error or success messages if they exist */}
+      {error && <div className="alert error">Fel: {error}</div>}
+      {successMessage && <div className="alert ok">{successMessage}</div>}
 
       <section className="grid">
+        {/* Week View: Spans full width */}
         {week && (
           <div className="card" style={{ gridColumn: '1 / -1' }}>
-            <h2>Week (Today + 6 days)</h2>
+            <h2>Vecka (Idag + 6 dagar)</h2>
             <WeekGrid week={week} onPick={onPickHour} />
           </div>
         )}
+
+        {/* Today's Detailed View */}
         <div className="card">
-          <h2>Today</h2>
+          <h2>Idag</h2>
           {!today ? (
-            <p>Loading…</p>
+            <p>Laddar…</p>
           ) : (
             <>
               <p className="date">{new Date(today.date ?? Date.now()).toLocaleDateString()}</p>
               <ul className="schedule">
-                {today.hours.map(h => (
-                  <HourRow key={h.hour} hour={h.hour} minutes={h.minutes} />
+                {today.hours.map(hourData => (
+                  <HourRow key={hourData.hour} hour={hourData.hour} minutes={hourData.minutes} />
                 ))}
               </ul>
             </>
           )}
         </div>
 
+        {/* Booking Form */}
         <div className="card">
-          <h2>New Booking</h2>
+          <h2>Ny bokning</h2>
           <form onSubmit={submitBooking} className="form">
             <label>
-              Date
+              Datum
+              {/* Controlled Input: value comes from state, onChange updates state */}
               <input type="date" name="date" value={form.date} onChange={onChange} />
             </label>
             <label>
-              Hour
+              Timme
               <input type="number" name="hour" min="0" max="23" value={form.hour} onChange={onChange} />
             </label>
             <label>
-              Start minute
+              Startminut
               <input type="number" name="startMinute" min="0" max="59" value={form.startMinute} onChange={onChange} />
             </label>
             <label>
-              End minute
+              Slutminut
               <input type="number" name="endMinute" min="1" max="60" value={form.endMinute} onChange={onChange} />
             </label>
             <div className="form-actions">
-              <button type="submit">Book</button>
+              <button type="submit">Boka</button>
             </div>
           </form>
-          <p className="hint">Tip: End minute must be greater than start minute, max 60.</p>
+          <p className="hint">Tips: Slutminut måste vara större än startminut, max 60.</p>
         </div>
       </section>
     </>
   )
 }
 
+/**
+ * A.6 App Component
+ * 
+ * The Root Controller-View of the React side.
+ * - Owns all main state for the scheduler UI (today, week, booking form, loading/error flags).
+ * - Decides which "page" to show (Home, Schedule, Admin) based on the current route from the Router in main.jsx.
+ * 
+ * Codemap connections:
+ * - "React Radio Scheduler Application Bootstrap and Navigation Flow":
+ *   Router listens to hash changes and passes `route` down into this component.
+ * - "Schedule Data Loading Flow - React Frontend to Database Backend":
+ *   useEffect → loadToday/loadWeek → fetch('/db/schedule/...') → backend → DbContext → ScheduleProjectionDb → JSON → setToday/setWeek.
+ * - "Radio Scheduler Booking Creation Flow":
+ *   Admin form → submitBooking → fetch('/db/event/post') → EventDbEndpoints + EventActionsDb → SQLite → Promise.all reloads schedule.
+ * 
+ * Props:
+ * - route: The current URL hash ("#/", "#/schedule", "#/admin"), passed from Router in main.jsx.
+ */
 export default function App({ route = '#/' }) {
+  // B.8 State definitions (the component's "memory").
+  // - today: one DaySchedule for the Admin "Today" list (built from /db/schedule/today).
+  // - week: full 7-day schedule window for grids and previews (from /db/schedule/7days).
+  // - loading: whether we are currently fetching data from the backend.
+  // - error / successMessage: feedback banners shown at the top of the Admin panel.
   const [today, setToday] = useState(null)
   const [week, setWeek] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [successMessage, setSuccessMessage] = useState('')
+
+  // B.30 [Root] Form state: booking request we will send to the backend.
+  // - Mirrors the parameters of the /db/event/post endpoint [B.15a/B.15b]:
+  //   date, hour, startMinute, endMinute.
+  // - These correspond directly to the minute grid used on the backend [A.3*]:
+  //   * hour 0..23, minutes 0..60 where true = booked, false = default music.
   const [form, setForm] = useState({
-    date: new Date().toISOString().slice(0,10),
+    date: new Date().toISOString().slice(0, 10), // Today's date as YYYY-MM-DD
     hour: 12,
     startMinute: 0,
     endMinute: 30
   })
-  const [posting, setPosting] = useState(false)
-  const [msg, setMsg] = useState('')
+  const [isPosting, setIsPosting] = useState(false)
 
-  // Load today's schedule (DB-backed). Normalizes minute arrays for the Today card.
+  // B.10 [Root] Load today's schedule (Admin "Today" list) in the schedule data loading lane.
+  // - This is the frontend half of the Today flow in the "Schedule Data Loading Flow" codemap.
+  // - End-to-end story [B.10]:
+  //   App.loadToday [B.10] -> fetch('/db/schedule/today') -> Program.cs route mapping -> ScheduleDbEndpoints.BuildToday [B.10a]
+  //   -> ScheduleProjectionDb.BuildSevenDaySchedule/BuildToday [B.10c] (paint minute grid from DB Events) -> JSON response -> setToday(...) here.
+  //
+  // C.10 'async' and 'await' work exactly like in C# async methods.
   const loadToday = async () => {
-    setLoading(true); setError(''); setMsg('')
+    setLoading(true); setError(''); setSuccessMessage('')
     try {
+      // C.11 fetch: native browser call, equivalent to C# HttpClient.GetAsync().
       const res = await fetch('/db/schedule/today')
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
+
+      // C.12 Parse JSON (like JsonSerializer.DeserializeAsync<T>()).
       const data = await res.json()
+
+      // B.11 Normalize data (handle inconsistent capitalization from API / backend).
+      // - Depending on how ASP.NET serialized, properties may be `hours` or `Hours`, `minutes` or `Minutes`.
+      // - We reshape into the structure our components expect:
+      //   { date, hours: [ { hour, minutes: bool[60] }, ... ] }.
       const Hours = data.hours ?? data.Hours ?? []
-      const normalized = Hours.map(h => ({
+      const normalizedHours = Hours.map(h => ({
         hour: h.hour ?? h.Hour,
         minutes: (h.minutes ?? h.Minutes) ?? Array(60).fill(false)
       }))
-      setToday({ date: data.date ?? data.Date, hours: normalized })
+
+      setToday({ date: data.date ?? data.Date, hours: normalizedHours })
     } catch (e) {
       setError(e.message || String(e))
     } finally {
+      // C.13 finally: ensure loading flag is turned off whether we succeeded or failed.
       setLoading(false)
     }
   }
 
-  // Load the 7-day schedule projection (DB-backed) used by both consumer and admin views.
+  // B.12 Load the 7-day schedule window (used for week grids and home preview).
+  // - Mirrors the /db/schedule/7days flow in the "Schedule Data Loading Flow" codemap.
+  // - End-to-end story [B.10b]: App.loadWeek -> fetch('/db/schedule/7days') [B.10b] -> ScheduleDbEndpoints 7days handler [B.10b]
+  //   -> ScheduleProjectionDb.BuildSevenDaySchedule [B.10c] -> JSON -> setWeek(data).
   const loadWeek = async () => {
     setLoading(true); setError('')
     try {
@@ -276,43 +496,69 @@ export default function App({ route = '#/' }) {
     }
   }
 
-  // On mount, fetch both today and week so both routes are fast to show
-  useEffect(() => { loadToday(); loadWeek() }, [])
+  // B.13 Initial data load effect.
+  // - Runs once when App is first created (like a constructor), because dependency array is [].
+  // - Kicks off both schedule-loading flows so the UI can show Today + Week without a manual refresh.
+  // - This ties into the codemap step: "Initial Schedule Data Loading from Backend".
+  useEffect(() => {
+    loadToday();
+    loadWeek()
+  }, [])
 
-  // Keep booking form in state; cast numeric inputs to numbers
+  // B.30a Handler: updates the booking form state when the user types (controlled inputs lane).
+  // - Keeps the <input> values in sync with our React memory so the form UI always reflects `form`.
   const onChange = e => {
     const { name, value } = e.target
-    setForm(f => ({ ...f, [name]: name === 'hour' || name.includes('Minute') ? Number(value) : value }))
+    // C.14 Special logic: convert hour and minute fields to numbers.
+    // - [name]: dynamic property key, so this line updates the specific field that changed.
+    // - We use functional state update (currentForm => ...) to ensure we see the latest state value.
+    setForm(currentForm => ({
+      ...currentForm, // Spread operator: Copies all existing properties (like new Object { ...oldObject })
+      [name]: name === 'hour' || name.includes('Minute') ? Number(value) : value
+    }))
   }
 
-  // Post a booking via query params (beginner-friendly binding). Then refresh Today + Week.
+  // B.15 [Root] Frontend handler for the booking creation flow.
+  // - Part of the "Radio Scheduler Booking Creation Flow" codemap.
+  // - Consumes the form state from the form/control lane [B.30*] and sends it as a POST to /db/event/post [B.15a]
+  //   with the same parameters used by EventActionsDb.CreateEvent on the backend [B.15b].
   const submitBooking = async (e) => {
+    // C.15 Prevent default browser form submission (which would reload the page).
     e.preventDefault()
-    setPosting(true); setError(''); setMsg('')
+
+    setIsPosting(true); setError(''); setSuccessMessage('')
     try {
-      // Use query parameters to bind primitives in Minimal APIs without a DTO
-      const qs = new URLSearchParams({
+      // C.16 Build query string to match Minimal API parameter binding.
+      // - The keys here (date, hour, startMinute, endMinute) map 1:1 to the endpoint signature in EventDbEndpoints.cs.
+      const queryString = new URLSearchParams({
         date: form.date,
         hour: String(form.hour),
         startMinute: String(form.startMinute),
         endMinute: String(form.endMinute)
       }).toString()
-      const res = await fetch(`/db/event/post?${qs}`, { method: 'POST' })
+
+      // C.17 POST request: send the booking to /db/event/post.
+      const res = await fetch(`/db/event/post?${queryString}`, { method: 'POST' })
       if (!res.ok) {
         const text = await res.text()
         throw new Error(text || `HTTP ${res.status}`)
       }
+
       const result = await res.json()
-      setMsg(`Created booking with id ${result.EventId}`)
+      setSuccessMessage(`Skapade bokning med id ${result.EventId}`)
+
+      // B.16 Refresh both Today and Week to show the newly created booking.
+      // - Promise.all is like Task.WhenAll in C#: wait for both loads to finish before considering the refresh done.
       await Promise.all([loadToday(), loadWeek()])
     } catch (e2) {
       setError(e2.message || String(e2))
     } finally {
-      setPosting(false)
+      setIsPosting(false)
     }
   }
 
-  // Route flags (set by main.jsx Router)
+  // B.5c Derived state: decide which "page" to show based on the current route (navigation lane).
+  // - Mirrors the Router flow in main.jsx [B.5/B.5b] (codemap: Hash Navigation Setup and Route Management).
   const isHome = route === '#/'
   const isSchedule = route.startsWith('#/schedule')
   const isAdmin = route.startsWith('#/admin')
@@ -320,6 +566,8 @@ export default function App({ route = '#/' }) {
   return (
     <div className="container">
       <SiteHeader />
+
+      {/* Conditional Rendering: Only show if isHome is true */}
       {isHome && (
         <>
           <HeroNowPlaying />
@@ -327,16 +575,16 @@ export default function App({ route = '#/' }) {
           {week && <SchedulePreview week={week} />}
         </>
       )}
-      {isSchedule && (
-        <header><h1>Full Schedule</h1></header>
-      )}
 
       {isSchedule && (
-        <section className="grid">
-          <div className="card" style={{ gridColumn: '1 / -1' }}>
-            <WeekGrid week={week} onPick={() => {}} />
-          </div>
-        </section>
+        <>
+          <header><h1>Hela tablån</h1></header>
+          <section className="grid">
+            <div className="card" style={{ gridColumn: '1 / -1' }}>
+              <WeekGrid week={week} onPick={() => { }} />
+            </div>
+          </section>
+        </>
       )}
 
       {isAdmin && (
@@ -344,13 +592,18 @@ export default function App({ route = '#/' }) {
           week={week}
           today={today}
           form={form}
-          onPickHour={(date, hour) => setForm(f => ({ ...f, date: (date || new Date()).toString().slice(0,10), hour }))}
+          // Callback for clicking a cell: Update form state
+          onPickHour={(date, hour) => setForm(f => ({
+            ...f,
+            date: (date || new Date()).toString().slice(0, 10),
+            hour
+          }))}
           onChange={onChange}
           submitBooking={submitBooking}
           loading={loading}
           loadToday={loadToday}
           error={error}
-          msg={msg}
+          successMessage={successMessage}
         />
       )}
     </div>

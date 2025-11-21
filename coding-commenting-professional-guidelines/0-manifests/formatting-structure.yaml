@@ -1,0 +1,18 @@
+domain: formatting-structure
+topics:
+  - id: kb-formatting-structure-001
+    title: "- CI/CD – **2.6 Information Hiding**"
+    intent: "- CI/CD – **2.6 Information Hiding**: Simplify and reduce access to a class by hiding details, methods, and members that shouldn‘t be called and accessed by a client. ![](F:/Code-Projects/00-Study-00/00-Book-Referencing-00/Clean Code Fundamentals - Martin Hock-md/images/clean-code-understand-fundamentals.pdf-32-0.png) ``` In Java, classes and class members are access controlled."
+    tags:
+      - classes
+      - clean-code
+      - comments
+      - formatting
+      - functions
+      - guideline
+      - process
+    file: "formatting-structure/ci-cd-2-6-information-hiding.md"
+    source_lines:
+      start: 311
+      end: 1432
+    domain: formatting-structure

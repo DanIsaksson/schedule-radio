@@ -1,3 +1,15 @@
+// --- FILE: Actions/Actions.cs ---
+// A.5c Legacy in-memory booking logic (the "whiteboard") behind /schedule/* endpoints.
+// - Booking.SendBooking applies changes directly to the in-memory ScheduleData minute grid (no SQLite, no EF Core).
+// - EventActions keeps an in-memory dictionary of eventId -> time range so endpoints can list, delete, and reschedule.
+// - This mirrors the DB-backed logic in EventActionsDb, but everything lives only in RAM and is lost when the app restarts.
+//
+// B.25 [Legacy booking lane] What this system really is:
+// - A "sandbox" copy of the scheduler used for demos, labs, and algorithm experiments.
+// - Uses the same 7-day × 24 × 60 minute grid as the DB-backed flow (Program.cs A.3, Models A.3a),
+//   but updates it directly instead of persisting bookings to the Events table.
+// - The real React UI and production flows use the /db/* endpoints and EventActionsDb/B.15* instead.
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,8 +20,10 @@ namespace API.Actions;
 public static class Booking
 {
     /// <summary>
-    /// Attempts to book (or free) a range of minutes within a given hour on a specific date.
-    /// Used by legacy in-memory endpoints for demos and experiments.
+    /// B.25 Booking.SendBooking: core minute-level operation for the legacy in-memory lane.
+    /// - Attempts to book (or free) a range of minutes within a given hour on a specific date.
+    /// - Used by legacy in-memory endpoints (/schedule/book and /schedule/event/*) for demos and experiments.
+    /// - Contrast: DB-backed lane uses EventActionsDb.CreateEvent + ScheduleProjectionDb to affect the grid indirectly.
     /// </summary>
     /// <param name="schedule">The in-memory seven-day rolling schedule.</param>
     /// <param name="date">Date we want to modify (only the Date part is considered).</param>
@@ -84,7 +98,8 @@ public static class EventActions
     private static int _nextId = 1;
     private static readonly Dictionary<int, (DateTime Date, int Hour, int StartMinute, int EndMinute)> _events = new();
 
-    // Create a new event (booking). Returns generated eventId or -1 if conflict.
+    // B.25a Create a new in-memory event (booking) for POST /schedule/event/post.
+    // - Legacy counterpart of EventActionsDb.CreateEvent in the DB-backed flow [B.15b].
     public static int CreateEvent(ScheduleData schedule, DateTime date, int hour, int startMinute, int endMinute)
     {
         bool success = Booking.SendBooking(schedule, date, hour, startMinute, endMinute, true);
@@ -94,7 +109,8 @@ public static class EventActions
         return id;
     }
 
-    // Delete an event (unbook). Returns true on success.
+    // Delete an in-memory event (unbook) for POST /schedule/event/{eventId}/delete.
+    // Legacy counterpart of EventActionsDb.DeleteEvent.
     public static bool DeleteEvent(ScheduleData schedule, int eventId)
     {
         if (!_events.TryGetValue(eventId, out var e)) return false;
@@ -104,7 +120,8 @@ public static class EventActions
         return true;
     }
 
-    // Reschedule an existing event. Returns true on success.
+    // Reschedule an existing in-memory event for POST /schedule/event/{eventId}/reschedule.
+    // Uses Booking.SendBooking to free the old slot, then try to book the new one, with rollback on failure.
     public static bool RescheduleEvent(
         ScheduleData schedule,
         int eventId,
@@ -128,14 +145,14 @@ public static class EventActions
         return true;
     }
 
-    // Simple overview of all current events
+    // Simple overview of all current in-memory events (used by GET /schedule/event and related endpoints).
     public static IReadOnlyDictionary<int, (DateTime Date, int Hour, int StartMinute, int EndMinute)> ListEvents()
         => _events;
 }
 
 public static class ScheduleQueries
 {
-    // Returns the whole 7-day schedule – convenient wrapper
+    // Returns the whole 7-day in-memory schedule – convenient wrapper for legacy queries.
     public static ScheduleData GetSevenDays(ScheduleData schedule) => schedule;
 
     // Returns a list of booked hour slots as summaries

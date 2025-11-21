@@ -1,0 +1,290 @@
+domain: design-principles
+topics:
+  - id: kb-design-principles-001
+    title: "- CI/CD – **2.7 Cohesion**"
+    intent: "- CI/CD – **2.7 Cohesion**: _Measure of the_ _**affiliation**_ _of the elements of a component._ Cohesion refers to the degree to which the elements within a module belong together. It measures the strength of the relationships between the functionalities within a single module."
+    tags:
+      - architecture
+      - classes
+      - clean-code
+      - functions
+      - principles
+      - process
+      - testing
+    file: "design-principles/ci-cd-2-7-cohesion.md"
+    source_lines:
+      start: 311
+      end: 1533
+    domain: design-principles
+  - id: kb-design-principles-002
+    title: "- CI/CD – **2.8 Coupling**"
+    intent: "- CI/CD – **2.8 Coupling**: _Measure for the_ _**dependencies**_ _between components._ Coupling refers to the degree of interdependence between software modules. It is a measure of how closely connected different modules or components are within a system."
+    tags:
+      - architecture
+      - classes
+      - clean-code
+      - formatting
+      - guideline
+      - principles
+      - process
+    file: "design-principles/ci-cd-2-8-coupling.md"
+    source_lines:
+      start: 311
+      end: 1618
+    domain: design-principles
+  - id: kb-design-principles-003
+    title: "- CI/CD – **2.9 Cohesion - Coupling**"
+    intent: "- CI/CD – **2.9 Cohesion - Coupling**: Cohesion and coupling are among the most important attributes for the quality of a design. In software development, coupling means the measure for the dependencies between components, while cohesion stands for the measure of the unity of the elements of a component."
+    tags:
+      - architecture
+      - clean-code
+      - formatting
+      - guideline
+      - principles
+      - process
+      - testing
+    file: "design-principles/ci-cd-2-9-cohesion-coupling.md"
+    source_lines:
+      start: 311
+      end: 1652
+    domain: design-principles
+  - id: kb-design-principles-004
+    title: "- CI/CD – **2.12 Cognitive Psychology and Architectural** **Principles**"
+    intent: "- CI/CD – **2.12 Cognitive Psychology and Architectural** **Principles**: Over the course of evolution, the human brain has developed impressive mechanisms for managing complex structures. Cognitive psychology, the study of how the human mind processes information, focuses on understanding the mental processes underlying behavior, such as perception, attention, language, problem-solving, and learning."
+    tags:
+      - architecture
+      - classes
+      - clean-code
+      - formatting
+      - functions
+      - guideline
+      - principles
+      - process
+      - testing
+    file: "design-principles/ci-cd-2-12-cognitive-psychology-and-architectural-principles.md"
+    source_lines:
+      start: 311
+      end: 1864
+    domain: design-principles
+  - id: kb-design-principles-005
+    title: "**WBT** **BBT** – **5.1 Goal of Design Principles**"
+    intent: "**WBT** **BBT** – **5.1 Goal of Design Principles**: _Code must be_ _**KISS**_ _,_ _**DRY**_ _and_ _**YAGNI**_ _!_ [Design principles¹ should lead to good object-oriented design.](http://butunclebob.com/ArticleS.UncleBob.PrinciplesOfOod) - Code and architecture smells are based on the violation of accepted design principles. - Provide important information on how to fix code and architecture smells."
+    tags:
+      - architecture
+      - classes
+      - formatting
+      - guideline
+      - principles
+      - process
+    file: "design-principles/wbt-bbt-5-1-goal-of-design-principles.md"
+    source_lines:
+      start: 4688
+      end: 7911
+    domain: design-principles
+  - id: kb-design-principles-006
+    title: "**WBT** **BBT** – **5.2 Overview of Design Principles**"
+    intent: "**WBT** **BBT** – **5.2 Overview of Design Principles**: ![](F:/Code-Projects/00-Study-00/00-Book-Referencing-00/Clean Code Fundamentals - Martin Hock-md/images/clean-code-understand-fundamentals.pdf-127-0.png) - The acronym **SOLID** was created by Robert C. Martin for a group of these principles."
+    tags:
+      - classes
+      - clean-code
+      - principles
+      - process
+    file: "design-principles/wbt-bbt-5-2-overview-of-design-principles.md"
+    source_lines:
+      start: 4688
+      end: 7966
+    domain: design-principles
+  - id: kb-design-principles-007
+    title: "**WBT** **BBT** – **5.3 SOLID Principles**"
+    intent: "**WBT** **BBT** – **5.3 SOLID Principles**: _A class should have one, and only one, reason to change._ - This is an object-oriented version of the functional programming principle that functions should have _no side effects_ . - A class should only have functions that directly contribute to the fulfillment of this task."
+    tags:
+      - architecture
+      - classes
+      - clean-code
+      - example
+      - formatting
+      - functions
+      - guideline
+      - naming
+      - principles
+      - process
+      - testing
+    file: "design-principles/wbt-bbt-5-3-solid-principles.md"
+    source_lines:
+      start: 4688
+      end: 11244
+    domain: design-principles
+  - id: kb-design-principles-008
+    title: "**WBT** **BBT** – **5.4 Packaging Principles - Cohesion**"
+    intent: "**WBT** **BBT** – **5.4 Packaging Principles - Cohesion**: ![](F:/Code-Projects/00-Study-00/00-Book-Referencing-00/Clean Code Fundamentals - Martin Hock-md/images/clean-code-understand-fundamentals.pdf-171-0.png) _The granule of reuse is the granule of release._ - The elements of reuse are the elements of the release. - Classes that are reused together should be in the same package so that they can be released"
+    tags:
+      - classes
+      - clean-code
+      - guideline
+      - principles
+      - process
+      - testing
+    file: "design-principles/wbt-bbt-5-4-packaging-principles-cohesion.md"
+    source_lines:
+      start: 4688
+      end: 11299
+    domain: design-principles
+  - id: kb-design-principles-009
+    title: "**WBT** **BBT** – **5.5 Packaging Principles - Coupling**"
+    intent: "**WBT** **BBT** – **5.5 Packaging Principles - Coupling**: _The dependency graph of packages must have no cycles._ - Classes and packages should not contain cyclic dependencies. - Make testing, maintainability, reusability, builds, and releases more difficult if cycles are not eliminated."
+    tags:
+      - architecture
+      - classes
+      - clean-code
+      - example
+      - functions
+      - guideline
+      - principles
+      - process
+      - testing
+    file: "design-principles/wbt-bbt-5-5-packaging-principles-coupling.md"
+    source_lines:
+      start: 4688
+      end: 11748
+    domain: design-principles
+  - id: kb-design-principles-010
+    title: "**WBT** **BBT** – **5.6 Further Design Principles**"
+    intent: "**WBT** **BBT** – **5.6 Further Design Principles**: The Speaking Code principle is a design principle that says that code should be written so that it is easy to read and understand. This is important because code is often read more than it is written."
+    tags:
+      - architecture
+      - classes
+      - comments
+      - example
+      - formatting
+      - functions
+      - guideline
+      - naming
+      - principles
+      - process
+      - testing
+    file: "design-principles/wbt-bbt-5-6-further-design-principles.md"
+    source_lines:
+      start: 4688
+      end: 11990
+    domain: design-principles
+  - id: kb-design-principles-011
+    title: "2 INSTANCE – Overview"
+    intent: "2 INSTANCE – Overview: 3 } **Easy to use.** A singleton class is written quickly and easily. - Guarantee that only **one** instance exists in a JVM at a time."
+    tags:
+      - architecture
+      - classes
+      - clean-code
+      - example
+      - formatting
+      - functions
+      - guideline
+      - naming
+      - principles
+      - process
+    file: "design-principles/2-instance-overview.md"
+    source_lines:
+      start: 12118
+      end: 15118
+    domain: design-principles
+  - id: kb-design-principles-012
+    title: "2 INSTANCE – **6.2 Structural**"
+    intent: "2 INSTANCE – **6.2 Structural**: _Provide a unified interface to a set of interfaces in a subsystem. Facade defines a higher-level_ _interface that makes the subsystem easier to use._ ![](F:/Code-Projects/00-Study-00/00-Book-Referencing-00/Clean Code Fundamentals - Martin Hock-md/images/clean-code-understand-fundamentals.pdf-219-0.png) ``` - Division of a complex system into several simple subsystems."
+    tags:
+      - architecture
+      - classes
+      - clean-code
+      - example
+      - formatting
+      - functions
+      - principles
+      - process
+    file: "design-principles/2-instance-6-2-structural.md"
+    source_lines:
+      start: 12118
+      end: 15641
+    domain: design-principles
+  - id: kb-design-principles-013
+    title: "2 DEFAULTMESSAGE"
+    intent: "2 DEFAULTMESSAGE: 2020-12-29T13:04:38.388325800 DefaultMessage 2020-12-29T13:04:38.416309600 DEFAULTMESSAGE 2.2.2 Example: [Window](https://github.com/mnhock/swcs/tree/master/swcs-gof/src/main/java/swcs/gof/structural/decorator/window) ``` ![](F:/Code-Projects/00-Study-00/00-Book-Referencing-00/Clean Code Fundamentals - Martin Hock-md/images/clean-code-understand-fundamentals.pdf-225-0.png)"
+    tags:
+      - architecture
+      - classes
+      - clean-code
+      - example
+      - formatting
+      - functions
+      - naming
+      - principles
+      - process
+    file: "design-principles/2-defaultmessage.md"
+    source_lines:
+      start: 15642
+      end: 16660
+    domain: design-principles
+  - id: kb-design-principles-014
+    title: "2 VP"
+    intent: "2 VP: 3 Developer 4 Developer"
+    tags:
+      - general
+    file: "design-principles/2-vp.md"
+    source_lines:
+      start: 16664
+      end: 16672
+    domain: design-principles
+  - id: kb-design-principles-015
+    title: "5 VP – Overview"
+    intent: "5 VP – Overview: 6 Developer 7 Developer 8 Developer - Simple implementation of **nested** structures Elegant working with the tree structure. The client can easily traverse through the hierarchy, call operations, and manage them, i.e., add new elements and delete existing ones."
+    tags:
+      - architecture
+      - classes
+      - clean-code
+      - example
+      - formatting
+      - guideline
+      - naming
+      - principles
+      - process
+      - testing
+    file: "design-principles/5-vp-overview.md"
+    source_lines:
+      start: 16673
+      end: 17984
+    domain: design-principles
+  - id: kb-design-principles-016
+    title: "5 VP – **6.3 Behavioural**"
+    intent: "5 VP – **6.3 Behavioural**: _Allow an object to alter its behavior when its internal state changes. The object will appear to_ _change its class._ ![](F:/Code-Projects/00-Study-00/00-Book-Referencing-00/Clean Code Fundamentals - Martin Hock-md/images/clean-code-understand-fundamentals.pdf-251-0.png) - An object should change its external behavior at runtime depending on its state."
+    tags:
+      - architecture
+      - classes
+      - clean-code
+      - example
+      - functions
+      - guideline
+      - principles
+      - process
+      - testing
+    file: "design-principles/5-vp-6-3-behavioural.md"
+    source_lines:
+      start: 16673
+      end: 18859
+    domain: design-principles
+  - id: kb-design-principles-017
+    title: "2 UNKNOWN, WAITING, RUNNING, COMPLETED, FAILED"
+    intent: "2 UNKNOWN, WAITING, RUNNING, COMPLETED, FAILED: 3 } 1 **public class DefaultCallbackRunnable extends** AbstractCallbackRunnable { 2 public void beforeRun() { System.out.println(\"beforeRun()\"); } ``` 7 public void afterRun() { System.out.println(\"afterRun()\"); } ``` 12 public void onError(Exception e) { System.out.println(\"onError()\"); } ``` 17 public void onSuccess() {"
+    tags:
+      - architecture
+      - classes
+      - clean-code
+      - example
+      - formatting
+      - functions
+      - guideline
+      - naming
+      - principles
+      - process
+      - testing
+    file: "design-principles/2-unknown-waiting-running-completed-failed.md"
+    source_lines:
+      start: 18860
+      end: 23970
+    domain: design-principles

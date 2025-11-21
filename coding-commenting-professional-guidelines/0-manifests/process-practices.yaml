@@ -1,0 +1,343 @@
+domain: process-practices
+topics:
+  - id: kb-process-practices-001
+    title: "- CI/CD – Overview"
+    intent: "- CI/CD – Overview: - Design Principles - Design Patterns (GoF)"
+    tags:
+      - principles
+      - process
+    file: "process-practices/ci-cd-overview.md"
+    source_lines:
+      start: 311
+      end: 316
+    domain: process-practices
+  - id: kb-process-practices-002
+    title: "- CI/CD – **Who should read this book?**"
+    intent: "- CI/CD – **Who should read this book?**: I wrote the book because I want to help developers get experience in clean code or improve it. Get them a feeling of what it is about to be a Software Craftsman."
+    tags:
+      - clean-code
+      - guideline
+      - process
+    file: "process-practices/ci-cd-who-should-read-this-book.md"
+    source_lines:
+      start: 311
+      end: 328
+    domain: process-practices
+  - id: kb-process-practices-003
+    title: "- CI/CD – **What you must learn about Software Development** **yourself?**"
+    intent: "- CI/CD – **What you must learn about Software Development** **yourself?**: Developers are always wrong   - only the degree to which different developers are wrong in their endless architecture discussions differs! If something can break, it will break   - make sure that a project is foolproof!"
+    tags:
+      - architecture
+      - process
+      - testing
+    file: "process-practices/ci-cd-what-you-must-learn-about-software-development-yourself.md"
+    source_lines:
+      start: 311
+      end: 360
+    domain: process-practices
+  - id: kb-process-practices-004
+    title: "- CI/CD – **What about the code examples and typographic** **conventions?**"
+    intent: "- CI/CD – **What about the code examples and typographic** **conventions?**: All the code examples in this book are in Java. I don‘t want to put much boilerplate code within the code examples, so I just leave it out."
+    tags:
+      - classes
+      - example
+      - functions
+      - naming
+    file: "process-practices/ci-cd-what-about-the-code-examples-and-typographic-conventions.md"
+    source_lines:
+      start: 311
+      end: 373
+    domain: process-practices
+  - id: kb-process-practices-005
+    title: "- CI/CD – **Which literature is this book based on?**"
+    intent: "- CI/CD – **Which literature is this book based on?**: Schneider, Kurt : _Abenteuer Software Qualität – Grundlagen und Verfahren für Qualitätssicherung_ _und Qualitätsmanagement_, dpunkt.verlag, 2007 Robert, Martin : _Clean Code – A Handbook of Agile Software Craftsmanship_, Prentice Hall, 2009 Lilienthal, Carola : _Sustainable Software Architecture. Analyze and Reduce Technical Debt_, Dpunkt Verlag, 2019"
+    tags:
+      - architecture
+      - classes
+      - clean-code
+      - example
+      - guideline
+      - principles
+      - process
+      - testing
+    file: "process-practices/ci-cd-which-literature-is-this-book-based-on.md"
+    source_lines:
+      start: 311
+      end: 439
+    domain: process-practices
+  - id: kb-process-practices-006
+    title: "- CI/CD – **Giving Feedback?**"
+    intent: "- CI/CD – **Giving Feedback?**: Your feedback is invaluable in helping me improve this book. Whether you’ve found a typo, discovered a bug in the code, or have a suggestion for the content, I would love to hear from you."
+    tags:
+      - clean-code
+      - comments
+      - naming
+      - process
+    file: "process-practices/ci-cd-giving-feedback.md"
+    source_lines:
+      start: 311
+      end: 489
+    domain: process-practices
+  - id: kb-process-practices-007
+    title: "- CI/CD – **1.1 A Passion for Software Development**"
+    intent: "- CI/CD – **1.1 A Passion for Software Development**: _Software Craftsmanship is a long journey to mastery. It’s a mindset where software developers_ _choose to be responsible for their own careers, constantly learning new tools and techniques and_ _constantly bettering themselves._ ``` - Sandro Mancuso, The Software Craftsman The basis of the Software Craftsmanship movement is the publication of _Clean Code_ by Robert C."
+    tags:
+      - clean-code
+      - example
+      - guideline
+      - principles
+      - process
+      - testing
+    file: "process-practices/ci-cd-1-1-a-passion-for-software-development.md"
+    source_lines:
+      start: 311
+      end: 650
+    domain: process-practices
+  - id: kb-process-practices-008
+    title: "- CI/CD – **1.2 Manifesto for Software Craftsmanship**"
+    intent: "- CI/CD – **1.2 Manifesto for Software Craftsmanship**: [The famous Manifesto for Software Craftsmanship¹ describes professional software developers,](http://manifesto.softwarecraftsmanship.org/) [and itself reads like an addition to the Agile Manifesto²:](http://agilemanifesto.org/) In the Manifesto for Software Craftsmanship, the authors make a case for why software development should be considered a craft. They argue that, like any other craft, software development should be done with an emphasis on quality, and that developers should take pride in their work."
+    tags:
+      - clean-code
+      - functions
+      - guideline
+      - principles
+      - process
+      - testing
+    file: "process-practices/ci-cd-1-2-manifesto-for-software-craftsmanship.md"
+    source_lines:
+      start: 311
+      end: 692
+    domain: process-practices
+  - id: kb-process-practices-009
+    title: "- CI/CD – **1.3 Clean Code Developer**"
+    intent: "- CI/CD – **1.3 Clean Code Developer**: [The Clean Code Developer (CCD)³ is an initiative for more professionalism in software](https://clean-code-developer.com/) development. CCD defines a collection of principles and practices."
+    tags:
+      - architecture
+      - classes
+      - clean-code
+      - formatting
+      - functions
+      - naming
+      - principles
+      - process
+      - testing
+    file: "process-practices/ci-cd-1-3-clean-code-developer.md"
+    source_lines:
+      start: 311
+      end: 765
+    domain: process-practices
+  - id: kb-process-practices-010
+    title: "- CI/CD – **1.4 Boy Scout Rule**"
+    intent: "- CI/CD – **1.4 Boy Scout Rule**: _Always leave the campground cleaner than you found it._ [–Robert C. Martin⁶](http://cleancoder.com/) ![](F:/Code-Projects/00-Study-00/00-Book-Referencing-00/Clean Code Fundamentals - Martin Hock-md/images/clean-code-understand-fundamentals.pdf-20-0.png) ``` Boy Scouts have a rule regarding camping that they should leave the campground cleaner than they found it."
+    tags:
+      - architecture
+      - clean-code
+      - comments
+      - functions
+      - guideline
+      - naming
+      - process
+      - testing
+    file: "process-practices/ci-cd-1-4-boy-scout-rule.md"
+    source_lines:
+      start: 311
+      end: 804
+    domain: process-practices
+  - id: kb-process-practices-011
+    title: "- CI/CD – **1.5 Broken Windows Theory**"
+    intent: "- CI/CD – **1.5 Broken Windows Theory**: _The importance of fixing the small problems in your code, the “broken windows”, so they don’t_ _grow into large problems._ - [The Pragmatic Programmer⁹](https://pragprog.com/titles/tpp20/the-pragmatic-programmer-20th-anniversary-edition/) The broken windows theory is a criminological theory that states that visible signs"
+    tags:
+      - clean-code
+      - functions
+      - principles
+      - process
+    file: "process-practices/ci-cd-1-5-broken-windows-theory.md"
+    source_lines:
+      start: 311
+      end: 846
+    domain: process-practices
+  - id: kb-process-practices-012
+    title: "- CI/CD – **1.6 Cargo Cult Programming**"
+    intent: "- CI/CD – **1.6 Cargo Cult Programming**: In the software development world, there is a phenomenon known [as Cargo Cult Programming¹¹. The term was first coined by com-](https://archive .org/details/professionalsoft00mcco_0) puter scientist Richard P."
+    tags:
+      - clean-code
+      - functions
+      - principles
+      - process
+    file: "process-practices/ci-cd-1-6-cargo-cult-programming.md"
+    source_lines:
+      start: 311
+      end: 891
+    domain: process-practices
+  - id: kb-process-practices-013
+    title: "- CI/CD – **1.7 Knowledge - Expertise**"
+    intent: "- CI/CD – **1.7 Knowledge - Expertise**: [Simon Wardley published this graph as a joke¹² which it’s not based on any research. Nev-](https://threadreaderapp.com/thread/1045567546034987008.html) ertheless, you can recognize yourself as a developer in this graphic."
+    tags:
+      - clean-code
+      - guideline
+      - process
+    file: "process-practices/ci-cd-1-7-knowledge-expertise.md"
+    source_lines:
+      start: 311
+      end: 908
+    domain: process-practices
+  - id: kb-process-practices-014
+    title: "- CI/CD – **2.1 Software Design Pyramid**"
+    intent: "- CI/CD – **2.1 Software Design Pyramid**: ![](F:/Code-Projects/00-Study-00/00-Book-Referencing-00/Clean Code Fundamentals - Martin Hock-md/images/clean-code-understand-fundamentals.pdf-24-0.png) The basic concepts of OOD are the prerequisite for this book and will be discussed only briefly in the following chapter. However, they are the basis for understanding the design principles"
+    tags:
+      - architecture
+      - clean-code
+      - example
+      - functions
+      - principles
+      - process
+    file: "process-practices/ci-cd-2-1-software-design-pyramid.md"
+    source_lines:
+      start: 311
+      end: 948
+    domain: process-practices
+  - id: kb-process-practices-015
+    title: "- CI/CD – **2.2 Basic concepts of OOD**"
+    intent: "- CI/CD – **2.2 Basic concepts of OOD**: Object-oriented programming has four basic concepts: abstraction, encapsulation, inheritance and polymorphism . Although these concepts may seem complex, understanding how they work will help you to understand the basics of software design."
+    tags:
+      - architecture
+      - classes
+      - clean-code
+      - example
+      - formatting
+      - functions
+      - naming
+      - principles
+      - process
+    file: "process-practices/ci-cd-2-2-basic-concepts-of-ood.md"
+    source_lines:
+      start: 311
+      end: 1094
+    domain: process-practices
+  - id: kb-process-practices-016
+    title: "- CI/CD – **2.3 Goals of Software Design**"
+    intent: "- CI/CD – **2.3 Goals of Software Design**: Software design, though invisible, forms the backbone of any software project. Even if a piece of software meets all functional requirements, poor design can lead to significant challenges in maintainability, scalability, and overall quality."
+    tags:
+      - architecture
+      - classes
+      - clean-code
+      - comments
+      - functions
+      - principles
+      - process
+      - testing
+    file: "process-practices/ci-cd-2-3-goals-of-software-design.md"
+    source_lines:
+      start: 311
+      end: 1168
+    domain: process-practices
+  - id: kb-process-practices-017
+    title: "- CI/CD – **2.4 Symptoms of bad design**"
+    intent: "- CI/CD – **2.4 Symptoms of bad design**: Many signs can indicate a bad design in architecture. Some of these indicators are more obvious than others, but all of them can lead to problems down the road if they are not addressed."
+    tags:
+      - architecture
+      - functions
+      - principles
+      - process
+      - testing
+    file: "process-practices/ci-cd-2-4-symptoms-of-bad-design.md"
+    source_lines:
+      start: 311
+      end: 1242
+    domain: process-practices
+  - id: kb-process-practices-018
+    title: "- CI/CD – **2.5 Criteria for good design**"
+    intent: "- CI/CD – **2.5 Criteria for good design**: When it comes to designing applications, there are a few key criteria that need to be met to create a successful, well-designed architecture. Functionality is the most important aspect of any design."
+    tags:
+      - architecture
+      - comments
+      - functions
+      - guideline
+      - principles
+      - process
+    file: "process-practices/ci-cd-2-5-criteria-for-good-design.md"
+    source_lines:
+      start: 311
+      end: 1336
+    domain: process-practices
+  - id: kb-process-practices-019
+    title: "- CI/CD – **2.10 Big Ball of Mud**"
+    intent: "- CI/CD – **2.10 Big Ball of Mud**: A Big Ball of Mud is a haphazardly structured, sprawling, sloppy, duct-tape-and-balingwire, spaghetti-code jungle. These systems show unmistakable signs of unregulated growth and repeated expedient repair."
+    tags:
+      - architecture
+      - clean-code
+      - formatting
+      - principles
+      - process
+    file: "process-practices/ci-cd-2-10-big-ball-of-mud.md"
+    source_lines:
+      start: 311
+      end: 1698
+    domain: process-practices
+  - id: kb-process-practices-020
+    title: "- CI/CD – **2.16 Software Engineering Values**"
+    intent: "- CI/CD – **2.16 Software Engineering Values**: ![](F:/Code-Projects/00-Study-00/00-Book-Referencing-00/Clean Code Fundamentals - Martin Hock-md/images/clean-code-understand-fundamentals.pdf-57-0.png) - To ensure the functional correctness of the system, it is essential that each unit of the system is verifiable and has been tested. - A system is only complete if its functional correctness and completeness are proven by"
+    tags:
+      - architecture
+      - clean-code
+      - functions
+      - guideline
+      - principles
+      - process
+      - testing
+    file: "process-practices/ci-cd-2-16-software-engineering-values.md"
+    source_lines:
+      start: 311
+      end: 2522
+    domain: process-practices
+  - id: kb-process-practices-021
+    title: "- CI/CD – **2.17 Team Charter**"
+    intent: "- CI/CD – **2.17 Team Charter**: A team charter is a document that clarifies the direction of the team by setting a vision, mission, and boundaries that everyone on the team supports. As a source, it illustrates the focus and direction of the team to others in the organization."
+    tags:
+      - clean-code
+      - comments
+      - example
+      - guideline
+      - process
+      - testing
+    file: "process-practices/ci-cd-2-17-team-charter.md"
+    source_lines:
+      start: 311
+      end: 2580
+    domain: process-practices
+  - id: kb-process-practices-022
+    title: "- CI/CD – **3.1 Communicate through code**"
+    intent: "- CI/CD – **3.1 Communicate through code**: _There are only two hard things in Computer Science: cache invalidation and naming things._ - Phil Karlton Java code conventions are a set of guidelines for writing Java code that are intended to help improve the readability and maintainability of the code. Some of the key conventions include using descriptive and meaningful names for variables and methods, using consistent indentation and spacing, and using comments to document the code."
+    tags:
+      - classes
+      - comments
+      - example
+      - formatting
+      - functions
+      - guideline
+      - naming
+      - principles
+      - process
+    file: "process-practices/ci-cd-3-1-communicate-through-code.md"
+    source_lines:
+      start: 311
+      end: 4046
+    domain: process-practices
+  - id: kb-process-practices-023
+    title: "- CI/CD – **3.4 Shapes of code**"
+    intent: "- CI/CD – **3.4 Shapes of code**: Who doesn’t know it, you sit back, look at the code from a distance and recognize patterns. These patterns tell you a lot about the code you are looking at."
+    tags:
+      - classes
+      - clean-code
+      - comments
+      - formatting
+      - functions
+      - guideline
+      - naming
+      - principles
+      - process
+    file: "process-practices/ci-cd-3-4-shapes-of-code.md"
+    source_lines:
+      start: 311
+      end: 4629
+    domain: process-practices

@@ -1,7 +1,14 @@
 // --- FILE: Actions/ScheduleProjectionDb.cs
-// What this file does (beginner view)
-// - I read bookings from the database and paint them onto a 7‑day schedule grid that the frontend understands.
-// - Returned shape matches Models/ScheduleModels.cs so old code can reuse it.
+// A.3b Minute-grid painting from the database into the 7-day ScheduleData model.
+// - Beginner view: transform EventEntity rows from the DB into the 7‑day grid model used by the UI.
+// - Takes bookings from SchedulerContext.Events and "paints" them onto ScheduleData (see Models/ScheduleModels.cs [A.3a]).
+// - Called from Endpoints/ScheduleDbEndpoints.cs for /db/schedule/today and /db/schedule/7days.
+// B.10c Projection engine for the schedule data loading lane.
+// - Both /db/schedule/today [B.10a] and /db/schedule/7days [B.10b] call into these methods
+//   before React (App.jsx B.10/B.12) receives JSON and turns it into HourRow/HourCell [A.3c].
+// How to read this file
+// - Start at BuildSevenDaySchedule to see the full week flow.
+// - Watch for the [startDate, endDate) and [StartMinute, EndMinute) half‑open ranges that prevent off‑by‑one bugs.
 
 using System;
 using System.Linq;
@@ -18,7 +25,7 @@ namespace API.Actions
             var startDate = start.Date; // DateTime is built-in; .Date drops the time-of-day so comparisons are clean
             var endDate = startDate.AddDays(7); // +7 days; I treat end as exclusive (include >= startDate and < endDate)
 
-            var schedule = new ScheduleData(); // Step A: start from a blank 7-day grid (today..+6)
+            var schedule = new ScheduleData(); // Step A: start from a blank 7-day grid (ScheduleData pre-creates 7 DaySchedule entries).
 
             // Step B: get all bookings in [startDate, endDate) from the DB in one query
             var rows = db.Events // 'db' is EF DbContext; Events is my table (DbSet<EventEntity>)
@@ -34,7 +41,8 @@ namespace API.Actions
                 var hour = day.Hours.FirstOrDefault(h => h.Hour == row.Hour); // same idea for Hour bin
                 if (hour is null) continue; // guard
 
-                // Step D: mark each booked minute as true (half-open [StartMinute, EndMinute))
+                // A.3b / Step D: mark each booked minute as true (half-open [StartMinute, EndMinute)).
+                // - This is where DB bookings become the minute-level true/false flags described in Program.cs A.3 and Models A.3a.
                 var startM = Math.Max(0, row.StartMinute);
                 var endM = Math.Min(60, row.EndMinute);
                 for (int m = startM; m < endM; m++)

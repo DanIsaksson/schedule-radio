@@ -1,0 +1,21 @@
+domain: functions-objects
+topics:
+  - id: kb-functions-objects-001
+    title: "- CI/CD – **3.3 Classes and objects**"
+    intent: "- CI/CD – **3.3 Classes and objects**: Designing Java classes is crucial for creating effective and reusable software. Follow these best practices when designing Java classes: Standard Java Code Conventions : Maintain readability and consistency by adhering to the standard Java code conventions."
+    tags:
+      - architecture
+      - classes
+      - clean-code
+      - comments
+      - formatting
+      - functions
+      - guideline
+      - naming
+      - principles
+      - process
+    file: "functions-objects/ci-cd-3-3-classes-and-objects.md"
+    source_lines:
+      start: 311
+      end: 4523
+    domain: functions-objects

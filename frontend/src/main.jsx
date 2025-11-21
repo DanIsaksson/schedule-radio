@@ -1,35 +1,40 @@
-import React from 'react'
+import React from 'react' // [Startup.Frontend.1] Imports
 import { createRoot } from 'react-dom/client'
 import App from './App.jsx'
 import './styles.css'
 
-// Router: I read window.location.hash (e.g. "#/", "#/schedule", "#/admin")
-// - I re-render when the hash changes and pass the route into <App /> as a prop.
+/**
+ * [Startup.Frontend.2] Router Component
+ * This component handles the "Hash Routing" for the app.
+ * It watches the URL (e.g., #/admin) and tells App.jsx what to show.
+ * 
+ * -> See Lesson: Interactive-Lesson/07-Frontend-Bootstrap-and-Routing.md
+ */
 function Router() {
-  // Keep current route in state; default to home if no hash
+  // [Startup.Frontend.3] State
+  // Stores the current "hash" (route) in React state.
+  // When this changes, the app re-renders.
   const [route, setRoute] = React.useState(window.location.hash || '#/')
-  // Listen for hash changes (user clicks a link like #/schedule)
+
+  // [Startup.Frontend.4] Effect Hook
+  // Sets up an event listener to watch for URL changes.
   React.useEffect(() => {
     const onHashChange = () => setRoute(window.location.hash || '#/')
     window.addEventListener('hashchange', onHashChange)
     return () => window.removeEventListener('hashchange', onHashChange)
-  }, [])
-  // Pass the current route down; App decides what to render
+  }, []) 
+
+  // [Startup.Frontend.5] Render App
+  // Passes the current route down to the main App component.
   return <App route={route} />
 }
 
+// [Startup.Frontend.6] Entry Point
+// 1. Finds the <div id="root"> in index.html.
+// 2. Takes control of it with React.
+// 3. Renders the <Router /> inside.
 createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <Router />
   </React.StrictMode>
 )
-
-// === Experiments: Hash-based routing (main.jsx) ===
-// Experiment 1: Add a new route.
-//   Step 1: Update App.jsx to handle a new route flag (e.g. #/lab).
-//   Step 2: Use links or change window.location.hash to "#/lab" and confirm App renders the new view.
-//   Step 3: Keep or remove the new route once you've explored the flow.
-// Experiment 2: Hashchange listener.
-//   Step 1: Temporarily comment out the addEventListener/removeEventListener in Router.
-//   Step 2: Change the URL hash and observe that the UI no longer updates.
-//   Step 3: Restore the listener and confirm navigation works again.

@@ -1,11 +1,9 @@
-// --- FILE: Data/SchedulerContext.cs
-// What I use this for (beginner view)
-// - EF Core DbContext: my bridge to SQLite.
-// - I list my tables with DbSet<T> so EF knows what to create/query.
-// Where it plugs in
-// - Program.cs calls AddDbContext<SchedulerContext>(UseSqlite(...)). Connection string name: "Scheduler".
-// Add later
-// - New tables? Add more DbSet<T>. Custom keys/indexes? Override OnModelCreating().
+// [Db.Schema.1] Database Context
+// This class is the bridge between our code and the SQLite database.
+// It defines which tables exist and handles the connection.
+//
+// -> See Lesson: Interactive-Lesson/02-EFCore-DbContext-Entities.md
+
 using Microsoft.EntityFrameworkCore; // EF Core
 using API.Models; // EventEntity lives here
 
@@ -13,21 +11,17 @@ namespace API.Data
 {
     public class SchedulerContext : DbContext
     {
-        // DI passes provider settings here (UseSqlite, connection string). 'base(options)' wires DbContext.
+        // [Db.Schema.2] Constructor
+        // Receives configuration (like the connection string) from Program.cs
+        // and passes it to the base DbContext class.
         public SchedulerContext(DbContextOptions<SchedulerContext> options)
             : base(options)
         {
         }
 
-        // Cheat sheet: DbContext (tracks entities), DbSet<T> (table), DbContextOptions<T> (provider config).
-
-        // Endpoints: ask for 'SchedulerContext db' and DI gives me a per-request context.
-
-        // Tables
-        // - Events => table for bookings. Primary key is EventEntity.Id (by convention). See Models/EventEntity.cs.
+        // [Db.Schema.3] Tables (DbSet)
+        // This property tells EF Core: "There is a table called 'Events' that stores 'EventEntity' objects."
+        // - One row in the table = One instance of EventEntity.
         public DbSet<EventEntity> Events { get; set; } = default!;
-
-        // Model configuration (later)
-        // - Override OnModelCreating for indexes/constraints when needed.
     }
 }

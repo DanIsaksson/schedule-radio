@@ -1,10 +1,10 @@
 // --- FILE: Actions/EventActionsDb.cs
-// What this file does (beginner view)
-// - I save and change bookings in the SQLite database using EF Core.
-// - Each public method is one action I can call from an endpoint (create, delete, reschedule, list).
+// Beginner view: "guard" logic behind the /db/event doors (see Endpoints/EventDbEndpoints.cs).
+// - Each public method is one booking action: create, delete, reschedule, list.
 // How to read this file
-// - Skim the method name first, then read the numbered steps inside it (1..5). Each step says exactly why it exists.
-// - If you see LINQ like .Where(...).ToList(), read it as: "filter rows like this, then run the query now".
+// - Start from the method that matches the endpoint name (e.g. CreateEvent ↔ POST /db/event/post).
+// - Inside each method, follow the numbered steps to see validation, conflict checks, and DB writes.
+// - When you see LINQ like .Where(...).ToList(), read it as: "filter rows like this, then run the query now".
 
 using System;
 using System.Collections.Generic;
@@ -16,7 +16,9 @@ namespace API.Actions
 {
     public static class EventActionsDb
     {
-        // Create a new booking row. Return new Id on success; -1 if conflict/invalid.
+        // B.15b CreateEvent: core booking logic behind POST /db/event/post [B.15a].
+        // - Called from the React admin submit handler App.jsx submitBooking [B.15] via EventDbEndpoints.
+        // - Returns the new Id on success; -1 if validation or overlap checks fail.
         public static int CreateEvent(SchedulerContext db, DateTime date, int hour, int startMinute, int endMinute)
         {
             // 1) Validate input (keep it simple):
@@ -59,12 +61,10 @@ namespace API.Actions
             return entity.Id;
         }
 
-        // Delete a booking by Id. Return true on success; false if not found.
+        // Delete a booking by Id (used by POST /db/event/{eventId}/delete).
+        // Returns true when a row was found and removed; false if the Id did not exist.
         public static bool DeleteEvent(SchedulerContext db, int eventId)
         {
-            // 1) Find the entity: var entity = db.Events.Find(eventId);
-            // 2) If null => return false.
-            // 3) Remove(entity); SaveChanges(); return true.
             var entity = db.Events.Find(eventId);
             if (entity is null) return false;
             db.Events.Remove(entity);
@@ -72,7 +72,8 @@ namespace API.Actions
             return true;
         }
 
-        // Change the time of an existing booking. Return true on success.
+        // Change the time of an existing booking for POST /db/event/{eventId}/reschedule.
+        // Returns true when the new time is valid and conflict-free, otherwise false.
         public static bool RescheduleEvent(
             SchedulerContext db,
             int eventId,
@@ -112,10 +113,10 @@ namespace API.Actions
             return true;
         }
 
-        // Read all bookings. Simple helper to test reads early.
+        // Read all bookings. Used by GET /db/event to inspect current rows.
         public static List<EventEntity> ListEvents(SchedulerContext db)
         {
-            // TIP: Start simple. You can sort later if you want to.
+            // TIP: Start simple. You can add sorting or filtering later if you want to.
             return db.Events.ToList();
         }
     }

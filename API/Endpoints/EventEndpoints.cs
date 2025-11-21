@@ -1,16 +1,11 @@
 // --- FILE: EventEndpoints.cs ---
-//
-// Legacy in-memory event endpoints for experiments and comparison with the DB-backed /db/event path.
-//
-// PURPOSE:
-// Define API endpoints for creating, updating, deleting, and viewing in-memory events.
-// An "event" is a booked time slot with a unique ID.
+// A.5b Legacy in-memory "whiteboard" event endpoints under /schedule/event.
+// - Mirrors the DB-backed /db/event endpoints, but stores bookings only in memory (ScheduleData + EventActions [A.5c]).
+// - Useful for experiments and comparison; the real React UI uses the DB-backed path (/db/event/*) in EventDbEndpoints.
 //
 // CONCEPT: ROUTE PARAMETERS & MODEL BINDING
-// URLs like "/schedule/event/{eventId}" use a route parameter in curly braces `{}` that binds
-// to a method parameter with the same name (e.g., `int eventId`).
-// Parameters such as `(DateTime date, int hour, ...)` are bound from the request (query/body)
-// by ASP.NET Core based on their names.
+// - URLs like "/schedule/event/{eventId}" use route parameters `{}` bound to method parameters.
+// - Simple parameters like (DateTime date, int hour, ...) are model-bound from the request (query/body) by ASP.NET Core.
 //
 using API; // Use our new models
 using API.Actions; // Keep using the actions from the original file
@@ -47,9 +42,10 @@ namespace API.Endpoints
                     : Results.NotFound($"No event with id {eventId}"); // If not found, return 404.
             });
 
-            // --- ENDPOINT 6: POST /schedule/event/post ---
-            // Creates a new event (a new booking) and returns its new ID.
-            // The parameters here are 'model bound' from the request into simple primitives.
+            // B.25a Legacy create-booking endpoint: POST /schedule/event/post.
+            // - Uses in-memory ScheduleData and EventActions.CreateEvent [B.25a] (no DB persistence).
+            // - Counterpart in the DB-backed flow is POST /db/event/post [B.15a] (EventDbEndpoints + EventActionsDb.CreateEvent [B.15b]).
+            // The parameters here are model-bound from the request into simple primitives.
             eventGroup.MapPost("/post", (DateTime date, int hour, int startMinute, int endMinute, ScheduleData schedule) =>
             {
                 int id = EventActions.CreateEvent(schedule, date, hour, startMinute, endMinute);
@@ -92,6 +88,7 @@ namespace API.Endpoints
     }
     
     // === Experiments: Legacy event endpoints (/schedule/event/*) ===
+    // Lab ideas for exploring routing, status codes, and HTTP verbs on the legacy path.
     // Experiment 1: Route parameters and binding.
     //   Step 1: Rename the `eventId` parameter in one endpoint and rebuild.
     //   Step 2: Call /schedule/event/{id} and observe when binding succeeds or fails.
