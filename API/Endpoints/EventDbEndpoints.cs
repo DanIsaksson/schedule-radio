@@ -32,9 +32,9 @@ namespace API.Endpoints
             // B.15a POST /db/event/post -> backend "door" for the booking creation flow.
             // - Called by the React admin flow handler App.jsx submitBooking [B.15].
             // - Delegates to EventActionsDb.CreateEvent [B.15b] to validate, check overlaps, and write the booking row.
-            group.MapPost("/post", (DateTime date, int hour, int startMinute, int endMinute, SchedulerContext db) =>
+            group.MapPost("/post", (DateTime date, int hour, int startMinute, int endMinute, string? title, string? eventType, int? hostCount, bool hasGuest, SchedulerContext db) =>
             {
-                int id = EventActionsDb.CreateEvent(db, date, hour, startMinute, endMinute);
+                int id = EventActionsDb.CreateEvent(db, date, hour, startMinute, endMinute, title, eventType, hostCount, hasGuest);
                 return id == -1
                     ? Results.BadRequest("Conflict or invalid input")
                     : Results.Ok(new { EventId = id });

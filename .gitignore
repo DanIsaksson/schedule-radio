@@ -1,12 +1,12 @@
 # Custom
-[Ee]xercise/
-[Ii]teration/
-[Ll]essons-React/
-[Dd]esign-context/
-[Ii]nteractive-Lesson/
+# [Ee]xercise/
+# [Ii]teration/
+# [Ll]essons-React/
+# [Dd]esign-context/
+# [Ii]nteractive-Lesson/
 
 # Markdown
-*.md
+# *.md
 
 # VS Code
 .vscode/

@@ -19,7 +19,7 @@ namespace API.Actions
         // B.15b CreateEvent: core booking logic behind POST /db/event/post [B.15a].
         // - Called from the React admin submit handler App.jsx submitBooking [B.15] via EventDbEndpoints.
         // - Returns the new Id on success; -1 if validation or overlap checks fail.
-        public static int CreateEvent(SchedulerContext db, DateTime date, int hour, int startMinute, int endMinute)
+        public static int CreateEvent(SchedulerContext db, DateTime date, int hour, int startMinute, int endMinute, string? title, string? eventType, int? hostCount, bool hasGuest)
         {
             // 1) Validate input (keep it simple):
             //    - hour must be 0..23; minutes 0..59; end > start.
@@ -52,7 +52,11 @@ namespace API.Actions
                 Date = day,
                 Hour = hour,
                 StartMinute = startMinute,
-                EndMinute = endMinute
+                EndMinute = endMinute,
+                Title = title,
+                EventType = eventType,
+                HostCount = hostCount,
+                HasGuest = hasGuest
             };
             db.Events.Add(entity);
             db.SaveChanges();

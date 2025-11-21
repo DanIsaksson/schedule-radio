@@ -30,25 +30,32 @@ import React, { useEffect, useState } from 'react'
  * - hour: The hour number (0-23).
  * - minutes: The 60-minute booking array described above.
  */
-function HourRow({ hour, minutes }) {
-  // C.2 JS Array.prototype.some: "Does ANY element pass this test?"
-  // - minutes.some(isBooked => isBooked) returns true if at least one minute is booked.
-  // - C# LINQ equivalent: minutes.Any(m => m == true).
-  const isAnyMinuteBooked = minutes.some(isBooked => isBooked)
-
-  // C.3 Format the hour to always have 2 digits for the radio clock (e.g., 9 → "09").
-  const formattedHour = String(hour).padStart(2, '0')
+function MinuteMatrix({ hour, minutes, onMinuteClick, selection }) {
+  // Helper to check if a minute is in the current selection range
+  const isSelected = (m) => {
+    if (!selection) return false
+    const { start, end } = selection
+    if (start === null) return false
+    if (end === null) return m === start
+    return m >= Math.min(start, end) && m < Math.max(start, end)
+  }
 
   return (
-    <li className="row">
-      <span className="time">{formattedHour}:00</span>
-      {/* C.4 Conditional styling with a ternary expression (like C#: condition ? trueResult : falseResult). */}
-      <span className={`status ${isAnyMinuteBooked ? 'booked' : 'free'}`}>
-        {isAnyMinuteBooked ? 'Bokad' : 'Ledig'}
-      </span>
-      {/* C.5 Count how many minutes are booked (true). C# LINQ equivalent: minutes.Count(m => m). */}
-      <span className="count">{minutes.filter(Boolean).length}/60</span>
-    </li>
+    <div className="minute-matrix-container">
+      <h3>Välj tid för kl {String(hour).padStart(2, '0')}:00</h3>
+      <div className="minute-matrix">
+        {minutes.map((isBooked, i) => (
+          <div
+            key={i}
+            className={`minute-cell ${isBooked ? 'booked' : 'free'} ${isSelected(i) ? 'selected' : ''}`}
+            onClick={() => onMinuteClick(hour, i)}
+            title={`Minut ${i}`}
+          >
+            <span className="minute-number">{i}</span>
+          </div>
+        ))}
+      </div>
+    </div>
   )
 }
 
@@ -64,61 +71,30 @@ function HourRow({ hour, minutes }) {
  * - Booked ranges represent shows/segments/guests in a studio, using the same minute grid as the backend.
  * - [A.3c] Visualizes the same minute-grid structure as HourRow and the backend A.3/A.3a/A.3b.
  */
-function HourCell({ date, hour, minutes, onPick }) {
+function HourCell({ date, hour, minutes, bookings = [], onPick }) {
   // Calculate how many minutes are booked.
   const bookedMinutesCount = minutes.filter(Boolean).length
-
-  // Calculate the fraction of the hour that is booked (0.0 to 1.0).
   const bookedFraction = bookedMinutesCount / 60
-
-  // Determine the visual style based on how busy the hour is.
-  // This is simple logic: empty -> free, less than half -> partial, more -> busy.
   const statusLevel = bookedFraction === 0 ? 'free' : bookedFraction < 0.5 ? 'partial' : 'busy'
 
-  // B.3 Build a tooltip string that shows booked ranges (e.g., "00–15, 30–45").
-  // - This loop walks the 60-minute array and groups consecutive true values into ranges.
-  let bookedRanges = []
-  let currentMinuteIndex = 0
+  // If we have bookings with titles, show them
+  const hasBookings = bookings && bookings.length > 0
 
-  // C.6 While loop: standard iteration, similar to while(...) { ... } in C#.
-  while (currentMinuteIndex < 60) {
-    if (minutes[currentMinuteIndex]) {
-      // Found the start of a booked range
-      const startMinute = currentMinuteIndex
-
-      // Continue until we find a free minute or reach the end of the hour
-      while (currentMinuteIndex < 60 && minutes[currentMinuteIndex]) {
-        currentMinuteIndex++
-      }
-      const endMinute = currentMinuteIndex
-
-      // C.7 Helper function: format numbers as two digits using padStart.
-      const formatTwoDigits = (n) => String(n).padStart(2, '0')
-
-      // Add the range string to our list
-      bookedRanges.push(`${formatTwoDigits(startMinute)}–${formatTwoDigits(endMinute)}`)
-    } else {
-      // Minute is free, move to the next one
-      currentMinuteIndex++
-    }
-  }
-
-  const formattedHour = String(hour).padStart(2, '0')
-
-  // B.4 Create the final tooltip text for the user.
-  // - If there are booked ranges, show them; otherwise just show booked count.
-  const tooltipText = bookedRanges.length
-    ? `${formattedHour}:00  ${bookedMinutesCount}/60 bokad · ${bookedRanges.join(', ')}`
-    : `${formattedHour}:00  ${bookedMinutesCount}/60 bokad`
-
-  // C.8 onClick handler: when the cell is clicked, call onPick(date, hour) from the parent.
-  // - In the Admin panel this is used to pre-fill the booking form for that hour.
   return (
     <div
-      className={`cell ${statusLevel}`}
-      title={tooltipText}
+      className={`cell ${statusLevel} ${hasBookings ? 'has-content' : ''}`}
       onClick={() => onPick(date, hour)}
-    />
+    >
+      {hasBookings ? (
+        bookings.map((b, i) => (
+          <div key={i} className="booking-label" title={`${b.title} (${b.startMinute}-${b.endMinute})`}>
+            {b.title}
+          </div>
+        ))
+      ) : (
+        <div className="empty-label">Musik</div>
+      )}
+    </div>
   )
 }
 
@@ -161,6 +137,7 @@ function DayColumn({ day, onPick }) {
             date={day.date ?? day.Date}
             hour={hourData.hour}
             minutes={hourData.minutes}
+            bookings={hourData.bookings}
             onPick={onPick}
           />
         ))}
@@ -294,27 +271,38 @@ function SchedulePreview({ week }) {
         <h2>Sänds denna vecka</h2>
         <a href="#/schedule" className="link">Hela tablån →</a>
       </div>
-      <div className="week-grid preview">
-        {daysShort.map((day, index) => (
-          <div className={`day ${index === todayIndex ? 'today' : ''}`} key={day.date ?? day.Date}>
-            <div className="day-header">
-              {new Date(day.date ?? day.Date).toLocaleDateString('sv-SE', { weekday: 'short' })}
+      <div className="schedule-scroll-container">
+        <div className="week-grid preview">
+          {daysShort.map((day, index) => (
+            <div className={`day ${index === todayIndex ? 'today' : ''}`} key={day.date ?? day.Date}>
+              <div className="day-header">
+                {new Date(day.date ?? day.Date).toLocaleDateString('sv-SE', { weekday: 'short' })}
+              </div>
+              <div className="day-grid preview">
+                {/* Normalize nested hours/minutes data just like in DayColumn */}
+                {(day.hours ?? day.Hours ?? []).map(hourData => {
+                  const minutes = hourData.minutes ?? hourData.Minutes
+                  const bookings = hourData.bookings ?? hourData.Bookings ?? []
+                  const isBooked = minutes.some(Boolean)
+                  const hasTitle = bookings.length > 0
+                  return (
+                    <div
+                      key={hourData.hour ?? hourData.Hour}
+                      className={`cell ${isBooked ? 'busy' : 'free'} ${hasTitle ? 'has-content' : ''}`}
+                    >
+                      {bookings.map((b, i) => (
+                        <div key={i} className="booking-label small">
+                          <span className="time-range">{String(b.startMinute).padStart(2, '0')}-{String(b.endMinute).padStart(2, '0')}</span>
+                          <span className="booking-title"> {b.title}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )
+                })}
+              </div>
             </div>
-            <div className="day-grid preview">
-              {/* Normalize nested hours/minutes data just like in DayColumn */}
-              {(day.hours ?? day.Hours ?? []).map(hourData => {
-                const minutes = hourData.minutes ?? hourData.Minutes
-                const isBooked = minutes.some(Boolean)
-                return (
-                  <div
-                    key={hourData.hour ?? hourData.Hour}
-                    className={`cell ${isBooked ? 'busy' : 'free'}`}
-                  />
-                )
-              })}
-            </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </section>
   )
@@ -327,7 +315,15 @@ function SchedulePreview({ week }) {
  * It receives data (week, today) and actions (submitBooking, loadToday) as props from the App component.
  * This is a "Controlled Component" because the form state is managed by React (passed down via 'form' prop).
  */
-function AdminPanel({ week, today, form, onPickHour, onChange, submitBooking, loading, loadToday, error, successMessage }) {
+function AdminPanel({ week, today, form, onPickHour, onMinuteClick, onChange, submitBooking, loading, loadToday, error, successMessage, selection }) {
+  // Derived logic for Admin details
+  const isLive = form.eventType === 'Live'
+  const studio = isLive ? (form.hostCount === 1 ? 'Studio 1 (Billigare)' : 'Studio 2') : 'Standard'
+  const extraCost = isLive && form.hasGuest ? 'Extra Kostnad: Gästtransport' : ''
+
+  // Local state for collapsing the week view
+  const [showWeek, setShowWeek] = useState(false)
+
   return (
     <>
       {/* Toolbar Section */}
@@ -345,24 +341,57 @@ function AdminPanel({ week, today, form, onPickHour, onChange, submitBooking, lo
         {/* Week View: Spans full width */}
         {week && (
           <div className="card" style={{ gridColumn: '1 / -1' }}>
-            <h2>Vecka (Idag + 6 dagar)</h2>
-            <WeekGrid week={week} onPick={onPickHour} />
+            <div
+              className="collapsible-header"
+              onClick={() => setShowWeek(!showWeek)}
+              style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+            >
+              <h2 style={{ margin: 0 }}>Vecka (Idag + 6 dagar)</h2>
+              <span style={{ fontSize: '1.5rem' }}>{showWeek ? '−' : '+'}</span>
+            </div>
+            {showWeek && (
+              <div style={{ marginTop: '1rem' }}>
+                <WeekGrid week={week} onPick={onPickHour} />
+              </div>
+            )}
           </div>
         )}
 
         {/* Today's Detailed View */}
         <div className="card">
-          <h2>Idag</h2>
+          <h2>Idag (Välj timme för att boka)</h2>
           {!today ? (
             <p>Laddar…</p>
           ) : (
             <>
               <p className="date">{new Date(today.date ?? Date.now()).toLocaleDateString()}</p>
-              <ul className="schedule">
-                {today.hours.map(hourData => (
-                  <HourRow key={hourData.hour} hour={hourData.hour} minutes={hourData.minutes} />
-                ))}
-              </ul>
+
+              {/* Hour Selection List */}
+              <div className="hour-list">
+                {today.hours.map(hourData => {
+                  const isBooked = hourData.minutes.some(m => m)
+                  const isSelected = form.hour === hourData.hour
+                  return (
+                    <button
+                      key={hourData.hour}
+                      className={`hour-btn ${isBooked ? 'has-bookings' : ''} ${isSelected ? 'active' : ''}`}
+                      onClick={() => onChange({ target: { name: 'hour', value: hourData.hour } })}
+                    >
+                      {String(hourData.hour).padStart(2, '0')}:00
+                    </button>
+                  )
+                })}
+              </div>
+
+              {/* Minute Matrix for Selected Hour */}
+              {today.hours.find(h => h.hour === form.hour) && (
+                <MinuteMatrix
+                  hour={form.hour}
+                  minutes={today.hours.find(h => h.hour === form.hour).minutes}
+                  onMinuteClick={onMinuteClick}
+                  selection={selection && selection.hour === form.hour ? selection : null}
+                />
+              )}
             </>
           )}
         </div>
@@ -371,6 +400,35 @@ function AdminPanel({ week, today, form, onPickHour, onChange, submitBooking, lo
         <div className="card">
           <h2>Ny bokning</h2>
           <form onSubmit={submitBooking} className="form">
+            <label>
+              Titel
+              <input type="text" name="title" value={form.title} onChange={onChange} required />
+            </label>
+            <label>
+              Typ
+              <select name="eventType" value={form.eventType} onChange={onChange}>
+                <option value="PreRecorded">Förinspelat</option>
+                <option value="Live">Live</option>
+              </select>
+            </label>
+
+            {isLive && (
+              <>
+                <label>
+                  Antal Värdar
+                  <input type="number" name="hostCount" min="1" value={form.hostCount} onChange={onChange} />
+                </label>
+                <label className="checkbox">
+                  <input type="checkbox" name="hasGuest" checked={form.hasGuest} onChange={onChange} />
+                  Har Gäst?
+                </label>
+                <div className="info-box">
+                  <p><strong>Studio:</strong> {studio}</p>
+                  {extraCost && <p className="warn">{extraCost}</p>}
+                </div>
+              </>
+            )}
+
             <label>
               Datum
               {/* Controlled Input: value comes from state, onChange updates state */}
@@ -392,7 +450,6 @@ function AdminPanel({ week, today, form, onPickHour, onChange, submitBooking, lo
               <button type="submit">Boka</button>
             </div>
           </form>
-          <p className="hint">Tips: Slutminut måste vara större än startminut, max 60.</p>
         </div>
       </section>
     </>
@@ -438,9 +495,34 @@ export default function App({ route = '#/' }) {
     date: new Date().toISOString().slice(0, 10), // Today's date as YYYY-MM-DD
     hour: 12,
     startMinute: 0,
-    endMinute: 30
+    endMinute: 30,
+    title: '',
+    eventType: 'PreRecorded',
+    hostCount: 1,
+    hasGuest: false
   })
   const [isPosting, setIsPosting] = useState(false)
+
+  // Selection state for the "two-step loop"
+  const [selection, setSelection] = useState(null) // { hour, start, end, step: 1|2 }
+
+  const handleMinuteClick = (hour, minute) => {
+    setSelection(prev => {
+      // If starting new selection or switching hours, reset to step 1
+      if (!prev || prev.step === 2 || prev.hour !== hour) {
+        // Step 1: Set start minute
+        setForm(f => ({ ...f, hour, startMinute: minute, endMinute: minute + 1 }))
+        return { hour, start: minute, end: null, step: 1 }
+      } else {
+        // Step 2: Set end minute
+        // Ensure start < end
+        const start = Math.min(prev.start, minute)
+        const end = Math.max(prev.start, minute) + 1 // +1 because end is exclusive
+        setForm(f => ({ ...f, hour, startMinute: start, endMinute: end }))
+        return { hour, start, end: minute, step: 2 }
+      }
+    })
+  }
 
   // B.10 [Root] Load today's schedule (Admin "Today" list) in the schedule data loading lane.
   // - This is the frontend half of the Today flow in the "Schedule Data Loading Flow" codemap.
@@ -466,7 +548,8 @@ export default function App({ route = '#/' }) {
       const Hours = data.hours ?? data.Hours ?? []
       const normalizedHours = Hours.map(h => ({
         hour: h.hour ?? h.Hour,
-        minutes: (h.minutes ?? h.Minutes) ?? Array(60).fill(false)
+        minutes: (h.minutes ?? h.Minutes) ?? Array(60).fill(false),
+        bookings: (h.bookings ?? h.Bookings) ?? []
       }))
 
       setToday({ date: data.date ?? data.Date, hours: normalizedHours })
@@ -514,7 +597,7 @@ export default function App({ route = '#/' }) {
     // - We use functional state update (currentForm => ...) to ensure we see the latest state value.
     setForm(currentForm => ({
       ...currentForm, // Spread operator: Copies all existing properties (like new Object { ...oldObject })
-      [name]: name === 'hour' || name.includes('Minute') ? Number(value) : value
+      [name]: name === 'hasGuest' ? e.target.checked : (name === 'hour' || name.includes('Minute') || name === 'hostCount' ? Number(value) : value)
     }))
   }
 
@@ -534,7 +617,11 @@ export default function App({ route = '#/' }) {
         date: form.date,
         hour: String(form.hour),
         startMinute: String(form.startMinute),
-        endMinute: String(form.endMinute)
+        endMinute: String(form.endMinute),
+        title: form.title,
+        eventType: form.eventType,
+        hostCount: String(form.hostCount),
+        hasGuest: String(form.hasGuest)
       }).toString()
 
       // C.17 POST request: send the booking to /db/event/post.
@@ -598,6 +685,8 @@ export default function App({ route = '#/' }) {
             date: (date || new Date()).toString().slice(0, 10),
             hour
           }))}
+          onMinuteClick={handleMinuteClick}
+          selection={selection}
           onChange={onChange}
           submitBooking={submitBooking}
           loading={loading}

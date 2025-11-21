@@ -49,6 +49,14 @@ namespace API.Actions
                 {
                     hour.Minutes[m] = true;
                 }
+
+                // Add booking detail for the visitor UI
+                hour.Bookings.Add(new BookingDetail
+                {
+                    Title = row.Title ?? "Untitled",
+                    StartMinute = startM,
+                    EndMinute = endM
+                });
             }
 
             return schedule;

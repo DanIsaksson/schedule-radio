@@ -27,5 +27,11 @@ namespace API.Models
         // End minute (1-60, exclusive)
         // "Exclusive" means if EndMinute is 30, the booking goes up to minute 29.
         public int EndMinute { get; set; }
+
+        // [Db.Schema.7] New Fields for Visitor/Admin Requirements
+        public string? Title { get; set; }
+        public string? EventType { get; set; } // "PreRecorded" or "Live"
+        public int? HostCount { get; set; }
+        public bool HasGuest { get; set; }
     }
 }

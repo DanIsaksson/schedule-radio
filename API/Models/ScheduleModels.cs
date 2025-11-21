@@ -71,5 +71,18 @@ namespace API.Models // A new namespace to avoid conflicts
                 Minutes[i] = false;
             }
         }
+
+        // List of bookings in this hour (for Visitor UI to show titles)
+        public List<BookingDetail> Bookings { get; set; } = new List<BookingDetail>();
+    }
+
+    /// <summary>
+    /// Public view of a booking (safe for visitors).
+    /// </summary>
+    public class BookingDetail
+    {
+        public string Title { get; set; } = "Untitled";
+        public int StartMinute { get; set; }
+        public int EndMinute { get; set; }
     }
 }
