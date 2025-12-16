@@ -85,9 +85,22 @@ Terms you will see everywhere that might look scary but aren't:
 
 ## Check yourself
 -   Can you explain, in 2–3 sentences, how the browser, API, and database work together?
--   Did you successfully find the `[Startup.Backend.1]` tag in the code?
--   Did you find the matching explanation in the lesson?
 
+Checking myself:
+##
+MY ANSWER - How they work together: 
+The main.jsx file... it... somehow listens to changs in the state, I'm guessing it listens to the frontend but I don't really understand what "Router()" means on line 13, nor any of the other code yet either I guess but maybe I'll get there seeing as this is the first lesson doc. Maybe this is what allows us to re-render the page without reloading it, to dynamically modify and load elements visible to the user. I would like to know if we'll be going through the specifics of the syntax and stuff in the later lesson documents in Interactive-Lessons?
+##
+-   Did you successfully find the `[Startup.Backend.1]` tag in the code?
+##
+MY ANWER - Did I find `[Startup.Backend.1]` tag in the code?
+Yes, I found it on line 96 in Program.cs. I don't fully understand the MapPost though. I get that it informs the program what comes from entering /schedule/book" at the end of the address field in the browser, somehow, or perhaps if we make a booking and click a button which then "sends" this MapPost with the data within to the backend?
+##
+-   Did you find the matching explanation in the lesson?
+##
+MY ANSWER - Did I find the matching explanation?
+
+##
 ---
 
 ## Next Steps

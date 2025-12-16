@@ -1,4 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Scheduler Radio · Demo UI</title>
+  <!--
+    Very light-weight styling is kept in style.css so the HTML stays clean.
+    You can safely replace the stylesheet with something richer later.
+  -->
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!--
+    ---------------
+    Header Section
+    ---------------
+    Only a heading for now – enough to show the user what this page is.
+  -->
+  <header>
+    <h1>Today’s Schedule</h1>
+  </header>
 
+  <!--
+    ---------------
+    Action Section
+    ---------------
+    A single button that triggers a fetch() to the backend.
+    The "id" is referenced in script.js.
+  -->
+  <section>
+    <button id="loadBtn">Load from API</button>
+  </section>
+
+  <!--
+    ---------------
+    Output Section
+    ---------------
+    <pre> preserves whitespace so our JSON is readable.
+  -->
+  <section>
+    <pre id="output">Click the button to load data...</pre>
+    <ul id="scheduleList" class="schedule">
+      <li>Click the button to load data...</li>
+    </ul>
+  </section>
+
+  <!--
+    Front-end logic loaded as plain JS; no bundler required.
+    Keep the <script> tag at the end so HTML renders first.
+  -->
+  <script src="script.js"></script>
+</body>
+</html>
 
 // script.js – minimal front-end logic for Scheduler Radio
 // -------------------------------------------------------
@@ -66,3 +119,75 @@ btnLoad.addEventListener("click", async () => {
     preOut.textContent = `Error: ${err.message || err}`;
   }
 });
+
+
+/*
+ * API Static Stylesheet
+ *
+ * Purpose: Provides minimal styling for static HTML pages served directly by the API
+ * (e.g., fallback pages or simple test views).
+ *
+ * Design Choice: Kept ultra-minimal to be lightweight and distinct from the rich React frontend.
+ */
+
+/* Global Reset & Typography */
+body {
+  font-family: system-ui, sans-serif;
+  margin: 2rem;
+  background: #f7f7f7;
+  /* Light grey background for readability */
+  color: #222;
+  /* Dark grey text for contrast */
+}
+
+button {
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+/* Code/Debug Output Styling */
+pre {
+  background: #fff;
+  padding: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  overflow-x: auto;
+}
+
+/*
+ * Simple Schedule List
+ * Used for displaying a list of events in a non-grid format.
+ */
+.schedule {
+  list-style: none;
+  padding: 0;
+  margin-top: 1rem;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.schedule li {
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  justify-content: space-between;
+  /* Aligns time left, status right */
+}
+
+.schedule li:last-child {
+  border-bottom: none;
+}
+
+.schedule .time {
+  font-weight: 600;
+}
+
+.schedule .status {
+  font-size: 0.9rem;
+  color: #888;
+  /* Muted color for secondary info */
+}
+
+

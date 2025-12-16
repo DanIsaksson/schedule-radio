@@ -1,13 +1,28 @@
+/*
+ * Main Application Stylesheet
+ * 
+ * Purpose: Defines the visual language for the React Frontend (Admin & Visitor).
+ * Usage: Imported in `main.jsx` and applied globally.
+ */
+
 :root {
+  /* 
+   * Color Palette 
+   * Design Choice: High contrast, clean look with distinct accent colors for branding.
+   */
   --border: #e5e5e5;
   --bg: #f7f7f7;
   --card: #ffffff;
   --text: #222;
   --muted: #777;
   --ok: #0a7;
+  /* Success state (e.g., free slots) */
   --err: #b00;
+  /* Error state */
   --accent: #ff6a00;
-  --accent2: #ff3d00
+  /* Primary Brand Color (Orange) */
+  --accent2: #ff3d00;
+  /* Secondary Brand Color (Red-Orange) */
 }
 
 * {
@@ -40,16 +55,26 @@ button {
   cursor: pointer
 }
 
+/* 
+ * Layout Utilities 
+ * Usage: Used in `App.jsx` for main page structure.
+ */
 .grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1rem
+  /* Split view for Admin Dashboard */
+  gap: 1rem;
 }
 
+/* 
+ * Week Grid Layout
+ * Purpose: Displays the 7-day schedule.
+ * Design Choice: 7 equal columns for days.
+ */
 .week-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: .5rem
+  gap: .5rem;
 }
 
 .day {
@@ -62,10 +87,16 @@ button {
   margin-bottom: .25rem
 }
 
+/* 
+ * Day Column Layout
+ * Purpose: Represents a single day with 24 hour slots.
+ * Design Choice: Fixed row height (18px) for compact Admin view.
+ * Note: Visitor view overrides this to be taller (see below).
+ */
 .day-grid {
   display: grid;
   grid-template-rows: repeat(24, 18px);
-  gap: 2px
+  gap: 2px;
 }
 
 .cell {
@@ -348,7 +379,12 @@ button {
   }
 }
 
-/* Admin Minute Matrix */
+/* 
+ * Admin Minute Matrix 
+ * Usage: `MinuteMatrix` component in `App.jsx`.
+ * Purpose: Allows precise minute selection (0-59) without a dropdown.
+ * Design Choice: 10-column grid makes it easy to find "10, 20, 30" etc.
+ */
 .minute-matrix-container {
   margin-top: 1rem;
   padding: 1rem;
@@ -416,6 +452,21 @@ button {
   border-radius: 4px;
   cursor: pointer;
   font-size: 0.9rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 2px;
+  line-height: 1.1;
+}
+
+.hour-time {
+  font-weight: 600;
+}
+
+.hour-status {
+  font-size: 0.7rem;
+  opacity: 0.85;
 }
 
 .hour-btn:hover {
@@ -432,13 +483,61 @@ button {
   border-color: var(--accent2);
 }
 
-/* Visitor Schedule Enhancements */
+/* 
+ * Visitor Schedule Enhancements 
+ * Usage: `SchedulePreview` component in `App.jsx`.
+ * Purpose: Improves readability of the schedule on the home page.
+ */
+
+/* 
+ * Scrollable Container
+ * Design Choice: Fixed max-height with scroll to prevent the schedule 
+ * from dominating the entire page vertical space.
+ */
 .schedule-scroll-container {
   max-height: 500px;
   overflow-y: auto;
   border: 1px solid var(--border);
   border-radius: 8px;
   background: #fff;
+}
+
+.schedule-note {
+  margin: 0.75rem 0;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff8f0;
+  color: var(--text);
+}
+
+.week-bookings-grid {
+  gap: 1rem;
+}
+
+.day-bookings {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.booking-item {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  gap: 0.5rem;
+  align-items: baseline;
+  padding: 0.25rem 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.booking-item:last-child {
+  border-bottom: none;
+}
+
+.booking-time {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.8rem;
+  opacity: 0.85;
+  white-space: nowrap;
 }
 
 .week-grid.preview {
@@ -469,6 +568,10 @@ button {
   border-radius: 2px;
 }
 
+/* 
+ * Booking Title Styling
+ * Design Choice: Truncates long titles with ellipsis to fit the slot.
+ */
 .booking-title {
   font-weight: 600;
   white-space: nowrap;
@@ -476,6 +579,10 @@ button {
   text-overflow: ellipsis;
 }
 
+/* 
+ * Visitor Grid Overrides
+ * Design Choice: Taller rows (60px) to accommodate Title + Timeframe.
+ */
 .day-grid {
   /* Increase height to fit text */
   grid-template-rows: repeat(24, 60px);
