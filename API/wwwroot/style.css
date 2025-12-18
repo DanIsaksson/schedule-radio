@@ -1,0 +1,72 @@
+/*
+ * API Static Stylesheet
+ * A.1 [API.wwwroot] Styles for backend-served demo pages.
+ * What: Provides minimal styling for API/wwwroot HTML pages.
+ * Why: Keeps the demo pages readable while staying separate from the React app styling.
+ * Where: Linked from API/wwwroot/index.html (and other static demo pages).
+ *
+ * Purpose: Provides minimal styling for static HTML pages served directly by the API
+ * (e.g., fallback pages or simple test views).
+ *
+ * Design Choice: Kept ultra-minimal to be lightweight and distinct from the rich React frontend.
+ */
+
+/* Global Reset & Typography */
+body {
+  font-family: system-ui, sans-serif;
+  margin: 2rem;
+  background: #f7f7f7;
+  /* Light grey background for readability */
+  color: #222;
+  /* Dark grey text for contrast */
+}
+
+button {
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+/* Code/Debug Output Styling */
+pre {
+  background: #fff;
+  padding: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  overflow-x: auto;
+}
+
+/*
+ * Simple Schedule List
+ * Used for displaying a list of events in a non-grid format.
+ */
+.schedule {
+  list-style: none;
+  padding: 0;
+  margin-top: 1rem;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.schedule li {
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  justify-content: space-between;
+  /* Aligns time left, status right */
+}
+
+.schedule li:last-child {
+  border-bottom: none;
+}
+
+.schedule .time {
+  font-weight: 600;
+}
+
+.schedule .status {
+  font-size: 0.9rem;
+  color: #888;
+  /* Muted color for secondary info */
+}

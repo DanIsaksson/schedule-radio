@@ -1,0 +1,104 @@
+// A.1 [Db.Schedule.Projection] ScheduleProjectionDb (DB → minute-grid projection).
+// What: Reads EventEntity rows from SQLite and "paints" them into the shared schedule model (Days → Hours → Minutes[60]).
+// Why: Keeps a single schedule shape for the whole app where "not booked" means default music (filler).
+// Where:
+// - Called by /db/schedule/* endpoints (API/Endpoints/ScheduleDbEndpoints.cs).
+// - Consumed by the React UI (frontend/src/App.jsx) via loadToday/loadWeek.
+//
+// --- FILE: Actions/ScheduleProjectionDb.cs
+// A.3b Minute-grid painting from the database into the 7-day ScheduleData model.
+// - Beginner view: transform EventEntity rows from the DB into the 7‑day grid model used by the UI.
+// - Takes bookings from SchedulerContext.Events and "paints" them onto ScheduleData (see Models/ScheduleModels.cs [A.3a]).
+// - Called from Endpoints/ScheduleDbEndpoints.cs for /db/schedule/today and /db/schedule/7days.
+// B.10c Projection engine for the schedule data loading lane.
+// - Both /db/schedule/today [B.10a] and /db/schedule/7days [B.10b] call into these methods
+//   before React (App.jsx B.10/B.12) receives JSON and turns it into HourRow/HourCell [A.3c].
+// How to read this file
+// - Start at BuildSevenDaySchedule to see the full week flow.
+// - Watch for the [startDate, endDate) and [StartMinute, EndMinute) half‑open ranges that prevent off‑by‑one bugs.
+
+using System;
+using System.Linq;
+using API.Data; // SchedulerContext
+using API.Models; // ScheduleData, DaySchedule, HourSchedule, EventEntity
+
+namespace API.Actions
+{
+    public static class ScheduleProjectionDb
+    {
+        // Build a full 7‑day schedule starting from 'start' (usually DateTime.Today)
+        public static ScheduleData BuildSevenDaySchedule(SchedulerContext db, DateTime start)
+        {
+            return BuildScheduleRange(db, start, dayCount: 7);
+        }
+
+        public static ScheduleData BuildScheduleRange(SchedulerContext db, DateTime startDate, int dayCount)
+        {
+            var start = startDate.Date; // DateTime is built-in; .Date drops the time-of-day so comparisons are clean
+            var end = start.AddDays(dayCount); // +N days; I treat end as exclusive (include >= start and < end)
+
+            var schedule = new ScheduleData(start, dayCount);
+
+            // Step B: get all bookings in [start, end) from the DB in one query
+            var rows = db.Events // 'db' is EF DbContext; Events is my table (DbSet<EventEntity>)
+                .Where(e => e.Date >= start && e.Date < end) // build SQL filter (not executed yet)
+                .ToList(); // run the query now and give me C# objects
+
+            foreach (var row in rows)
+            {
+                // Step C: find the matching Day and Hour in our grid
+                var day = schedule.Days.FirstOrDefault(d => d.Date == row.Date); // FirstOrDefault: first match or null
+                if (day is null) continue; // row outside our list
+
+                var hour = day.Hours.FirstOrDefault(h => h.Hour == row.Hour); // same idea for Hour bin
+                if (hour is null) continue; // guard
+
+                // A.3b / Step D: mark each booked minute as true (half-open [StartMinute, EndMinute)).
+                // - This is where DB bookings become the minute-level true/false flags described in Program.cs A.3 and Models A.3a.
+                var startM = Math.Max(0, row.StartMinute);
+                var endM = Math.Min(60, row.EndMinute);
+                for (int m = startM; m < endM; m++)
+                {
+                    hour.Minutes[m] = true;
+                }
+
+                // Add booking detail for the visitor UI
+                hour.Bookings.Add(new BookingDetail
+                {
+                    Title = row.Title ?? "Untitled",
+                    StartMinute = startM,
+                    EndMinute = endM
+                });
+            }
+
+            return schedule;
+        }
+
+        // Convenience: return only today's DaySchedule
+        public static DaySchedule? BuildToday(SchedulerContext db, DateTime today)
+        {
+            var full = BuildSevenDaySchedule(db, today);
+            return full.Days.FirstOrDefault(d => d.Date == today.Date);
+        }
+
+        public static DaySchedule? BuildDay(SchedulerContext db, DateTime date)
+        {
+            var full = BuildScheduleRange(db, date, dayCount: 1);
+            return full.Days.FirstOrDefault(d => d.Date == date.Date);
+        }
+    }
+
+    // === Experiments: Schedule projection from DB (ScheduleProjectionDb) ===
+    // Experiment 1: Shorten or extend the window.
+    //   Step 1: Change AddDays(7) in BuildSevenDaySchedule to another value (e.g., 3 or 10).
+    //   Step 2: Call /db/schedule/7days and see how many days come back.
+    //   Step 3: Restore the original 7-day window once you understand the impact.
+    // Experiment 2: Date range boundaries.
+    //   Step 1: Temporarily change the filter from (e.Date < endDate) to (e.Date <= endDate) or (e.Date > startDate).
+    //   Step 2: Create bookings on the boundary days and inspect whether they appear twice or disappear.
+    //   Step 3: Restore the original [startDate, endDate) rule to avoid off-by-one bugs.
+    // Experiment 3: Minute painting.
+    //   Step 1: Change the Math.Max/Math.Min or the minute loop in Step D.
+    //   Step 2: Create bookings and compare how cells look in the frontend grid.
+    //   Step 3: Revert to the original painting logic once you've seen the effect.
+}

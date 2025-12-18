@@ -1,0 +1,186 @@
+<!--
+  A.1 [API.wwwroot] Endpoint Testing Lab (static page).
+  What: Lets you call a handful of endpoints (GET/POST) from buttons/inputs.
+  Why: Beginner-friendly way to test routing + responses without Swagger.
+  Where: Served as a static file from API/wwwroot via app.UseStaticFiles() in Program.cs.
+  Non-goal: Not a secured/production UI; it is a learning tool.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎯 Endpoint Testing Lab</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .test-section { background: white; padding: 20px; margin: 20px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .endpoint { background: #e8f4fd; padding: 10px; border-radius: 4px; font-family: monospace; margin: 10px 0; }
+        button { background: #007acc; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; margin: 5px; }
+        button:hover { background: #005a9e; }
+        .result { background: #f0f8ff; padding: 10px; border-radius: 4px; margin: 10px 0; font-family: monospace; white-space: pre-wrap; }
+        .error { background: #ffe8e8; color: #d00; }
+        .success { background: #e8ffe8; color: #080; }
+        input { padding: 8px; margin: 5px; border: 1px solid #ddd; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 Endpoint Testing Lab</h1>
+        <p>Test your endpoints here! Start with the simple ones, then move to the complex ones.</p>
+
+        <!-- Exercise 1: Simple GET Endpoints -->
+        <div class="test-section">
+            <h2>🧪 Exercise 1: Simple GET Endpoints</h2>
+            <p>These are the easiest - just click and see what happens!</p>
+            
+            <div class="endpoint">GET /hello</div>
+            <button onclick="testGet('/hello')">Test Hello</button>
+            <div id="hello-result" class="result" style="display:none;"></div>
+
+            <div class="endpoint">GET /number</div>
+            <button onclick="testGet('/number')">Test Number</button>
+            <div id="number-result" class="result" style="display:none;"></div>
+
+            <div class="endpoint">GET /today</div>
+            <button onclick="testGet('/today')">Test Today</button>
+            <div id="today-result" class="result" style="display:none;"></div>
+
+            <div class="endpoint">GET /now</div>
+            <button onclick="testGet('/now')">Test Now</button>
+            <div id="now-result" class="result" style="display:none;"></div>
+        </div>
+
+        <!-- Exercise 2: POST with Simple Data -->
+        <div class="test-section">
+            <h2>📝 Exercise 2: Simple POST Endpoints</h2>
+            <p>Send data to the server and see the response!</p>
+            
+            <div class="endpoint">POST /greet</div>
+            <input type="text" id="greet-name" placeholder="Enter your name">
+            <button onclick="testPost('/greet', {name: document.getElementById('greet-name').value})">Test Greet</button>
+            <div id="greet-result" class="result" style="display:none;"></div>
+
+            <div class="endpoint">POST /add</div>
+            <input type="number" id="add-num1" placeholder="First number" style="width:80px;">
+            <input type="number" id="add-num2" placeholder="Second number" style="width:80px;">
+            <button onclick="testPost('/add', {num1: parseInt(document.getElementById('add-num1').value), num2: parseInt(document.getElementById('add-num2').value)})">Test Add</button>
+            <div id="add-result" class="result" style="display:none;"></div>
+        </div>
+
+        <!-- Exercise 3: Real Schedule Endpoints -->
+        <div class="test-section">
+            <h2>🎙️ Exercise 3: Real Schedule Endpoints</h2>
+            <p>Test the actual radio schedule endpoints!</p>
+            
+            <div class="endpoint">GET /schedule/today</div>
+            <button onclick="testGet('/schedule/today')">View Today's Schedule</button>
+            <div id="schedule-result" class="result" style="display:none;"></div>
+
+            <div class="endpoint">GET /schedule/event/</div>
+            <button onclick="testGet('/schedule/event/')">List All Events</button>
+            <div id="events-result" class="result" style="display:none;"></div>
+
+            <div class="endpoint">GET /schedule/event/{id}</div>
+            <input type="number" id="event-id" placeholder="Event ID" style="width:80px;">
+            <button onclick="testGet('/schedule/event/' + document.getElementById('event-id').value)">Get Event by ID</button>
+            <div id="event-result" class="result" style="display:none;"></div>
+
+            <div class="endpoint">POST /schedule/event/post</div>
+            <input type="number" id="book-hour" placeholder="Hour (0-23)" style="width:60px;">
+            <input type="number" id="book-start" placeholder="Start min" style="width:60px;">
+            <input type="number" id="book-end" placeholder="End min" style="width:60px;">
+            <button onclick="bookTimeSlot()">Book 30-Minute Show</button>
+            <div id="book-result" class="result" style="display:none;"></div>
+        </div>
+
+        <!-- Results Display -->
+        <div class="test-section">
+            <h2>📊 Test Results</h2>
+            <div id="main-result" class="result" style="display:none;"></div>
+        </div>
+    </div>
+
+    <script>
+        // Helper function to test GET endpoints
+        async function testGet(endpoint) {
+            try {
+                const response = await fetch(endpoint);
+                const data = await response.text();
+                showResult(endpoint, data, response.ok);
+            } catch (error) {
+                showResult(endpoint, 'Error: ' + error.message, false);
+            }
+        }
+
+        // Helper function to test POST endpoints
+        async function testPost(endpoint, data) {
+            try {
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+                const result = await response.text();
+                showResult(endpoint, result, response.ok);
+            } catch (error) {
+                showResult(endpoint, 'Error: ' + error.message, false);
+            }
+        }
+
+        // Special function for booking time slots
+        async function bookTimeSlot() {
+            const hour = parseInt(document.getElementById('book-hour').value);
+            const startMinute = parseInt(document.getElementById('book-start').value);
+            const endMinute = parseInt(document.getElementById('book-end').value);
+
+            if (isNaN(hour) || isNaN(startMinute) || isNaN(endMinute)) {
+                showResult('Book Show', 'Please fill in all fields', false);
+                return;
+            }
+
+            // Create today's date in format that ASP.NET Core can parse
+            const today = new Date();
+            const dateString = today.toISOString(); // Format: 2024-12-19T00:00:00.000Z
+
+            // Build query string parameters
+            const params = new URLSearchParams({
+                date: dateString,
+                hour: hour,
+                startMinute: startMinute,
+                endMinute: endMinute
+            });
+
+            try {
+                const response = await fetch(`/schedule/event/post?${params.toString()}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({}) // Empty body since we're using query params
+                });
+                const result = await response.text();
+                showResult('Book Show', result, response.ok);
+            } catch (error) {
+                showResult('Book Show', 'Error: ' + error.message, false);
+            }
+        }
+
+        // Display results nicely
+        function showResult(endpoint, data, success) {
+            const resultDiv = document.getElementById('main-result');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result ' + (success ? 'success' : 'error');
+            resultDiv.innerHTML = `<strong>${endpoint}:</strong>\n${data}`;
+        }
+
+        // Auto-test simple endpoints on page load
+        window.onload = function() {
+            console.log('🎯 Endpoint Testing Lab loaded!');
+            console.log('💡 Tip: Open browser console (F12) to see detailed network requests');
+        };
+    </script>
+</body>
+</html>

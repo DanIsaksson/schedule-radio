@@ -1,0 +1,808 @@
+/*
+ * Main Application Stylesheet
+ * 
+ * Purpose: Defines the visual language for the React Frontend (Admin & Visitor).
+ * Usage: Imported in `main.jsx` and applied globally.
+ */
+
+:root {
+  /* 
+   * Color Palette 
+   * Design Choice: High contrast, clean look with distinct accent colors for branding.
+   */
+  --border: #e5e5e5;
+  --bg: #f7f7f7;
+  --card: #ffffff;
+  --text: #222;
+  --muted: #777;
+  --ok: #0a7;
+  /* Success state (e.g., free slots) */
+  --err: #b00;
+  /* Error state */
+  --accent: #ff6a00;
+  /* Primary Brand Color (Orange) */
+  --accent2: #ff3d00;
+  /* Secondary Brand Color (Red-Orange) */
+}
+
+* {
+  box-sizing: border-box
+}
+
+body {
+  font-family: system-ui, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+  margin: 2rem;
+  background: var(--bg);
+  color: var(--text)
+}
+
+header h1 {
+  margin: 0 0 1rem
+}
+
+.container {
+  max-width: 1000px;
+  margin: 0 auto
+}
+
+.controls {
+  margin: 1rem 0
+}
+
+button {
+  padding: .5rem 1rem;
+  font-size: 1rem;
+  cursor: pointer
+}
+
+/* 
+ * Layout Utilities 
+ * Usage: Used in `App.jsx` for main page structure.
+ */
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  /* Split view for Admin Dashboard */
+  gap: 1rem;
+}
+
+/* 
+ * Week Grid Layout
+ * Purpose: Displays the 7-day schedule.
+ * Design Choice: 7 equal columns for days.
+ */
+.week-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: .5rem;
+}
+
+.day {
+  display: flex;
+  flex-direction: column
+}
+
+.day-header {
+  font-weight: 600;
+  margin-bottom: .25rem
+}
+
+/* 
+ * Day Column Layout
+ * Purpose: Represents a single day with 24 hour slots.
+ * Design Choice: Fixed row height (18px) for compact Admin view.
+ * Note: Visitor view overrides this to be taller (see below).
+ */
+.day-grid {
+  display: grid;
+  grid-template-rows: repeat(24, 18px);
+  gap: 2px;
+}
+
+.cell {
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  background: #fdfdfd
+}
+
+.cell.free {
+  background: #fefefe
+}
+
+.cell.partial {
+  background: #f9f1ff
+}
+
+.cell.busy {
+  background: #ffe8ef
+}
+
+@media (max-width:800px) {
+  .week-grid {
+    grid-template-columns: repeat(2, 1fr)
+  }
+
+  .day-grid {
+    grid-template-rows: repeat(24, 16px)
+  }
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem
+}
+
+.date {
+  color: var(--muted)
+}
+
+.schedule {
+  list-style: none;
+  padding: 0;
+  margin: 0
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: .5rem 0;
+  border-bottom: 1px solid var(--border)
+}
+
+.row:last-child {
+  border-bottom: none
+}
+
+.time {
+  font-weight: 600;
+  width: 60px
+}
+
+.status {
+  font-size: .9rem
+}
+
+.status.booked {
+  color: #b06
+}
+
+.status.free {
+  color: #0a7
+}
+
+.count {
+  margin-left: auto;
+  color: var(--muted)
+}
+
+.form {
+  display: grid;
+  gap: .5rem
+}
+
+.form label {
+  display: grid;
+  gap: .25rem
+}
+
+.form input {
+  padding: .4rem;
+  border: 1px solid var(--border);
+  border-radius: 4px
+}
+
+/* B.20 [Portal.Me] Contributor profile layout (photo + details).
+ * What: Styles the #/portal/me "Konto" page profile section.
+ * Why: Keeps personal details readable and adapts when PhotoUrl is missing.
+ * Where: Markup lives in frontend/src/App.jsx under the isPortalMe route branch.
+ */
+.account-profile {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 1rem;
+  align-items: start;
+  margin-bottom: 1rem
+}
+
+.account-profile.no-photo {
+  grid-template-columns: 1fr
+}
+
+.account-photo img {
+  width: 120px;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid var(--border)
+}
+
+.account-details p {
+  margin: 0 0 .4rem
+}
+
+/* B.21 [Portal.Me] Payment history table (responsive wrapper + numeric alignment).
+ * What: Styles the read-only monthly payment rows (GET /api/contributor/payments).
+ * Why: Tables need horizontal scroll on small screens and right-aligned numbers for quick scanning.
+ * Where: Rendered in frontend/src/App.jsx under #/portal/me.
+ */
+.payments-table-wrapper {
+  width: 100%;
+  overflow-x: auto
+}
+
+.payments-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: .5rem
+}
+
+.payments-table th,
+.payments-table td {
+  padding: .5rem;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  white-space: nowrap
+}
+
+.payments-table th {
+  font-weight: 700;
+  background: #fafafa
+}
+
+.payments-table .num {
+  text-align: right
+}
+
+@media (max-width:800px) {
+  .account-profile {
+    grid-template-columns: 1fr
+  }
+}
+
+.form-actions {
+  margin-top: .5rem
+}
+
+.alert {
+  margin: .5rem 0;
+  padding: .5rem .75rem;
+  border-radius: 4px
+}
+
+.alert.ok {
+  background: #e7f8f2;
+  color: #064
+}
+
+.alert.error {
+  background: #ffecec;
+  color: #600
+}
+
+@media (max-width:800px) {
+  .grid {
+    grid-template-columns: 1fr
+  }
+}
+
+/* Consumer site additions (public UI) */
+.container-wide {
+  max-width: 1200px;
+  margin: 0 auto
+}
+
+.site-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem
+}
+
+.brand {
+  font-weight: 800;
+  font-size: 1.25rem
+}
+
+.accent {
+  color: var(--accent)
+}
+
+.nav a {
+  margin-left: 1rem;
+  color: var(--text);
+  text-decoration: none
+}
+
+.nav a[href*="#/"] {
+  padding: .25rem .5rem;
+  border-radius: 4px
+}
+
+.nav a:hover {
+  color: var(--accent)
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 1rem;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 1rem
+}
+
+.hero-art {
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border-radius: 8px;
+  min-height: 180px
+}
+
+.hero-meta h1 {
+  margin: .25rem 0 0
+}
+
+.muted {
+  color: var(--muted)
+}
+
+.btn-accent {
+  display: inline-block;
+  margin-top: .5rem;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: #fff;
+  padding: .5rem .9rem;
+  border-radius: 999px;
+  text-decoration: none
+}
+
+.badge-live {
+  display: inline-block;
+  background: linear-gradient(135deg, var(--accent2), var(--accent));
+  color: #fff;
+  font-weight: 700;
+  font-size: .75rem;
+  padding: .2rem .5rem;
+  border-radius: 6px
+}
+
+.featured {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin: 1rem 0
+}
+
+.card-shadow {
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .06)
+}
+
+.thumb {
+  background: #eee;
+  border-radius: 8px;
+  aspect-ratio: 16/9
+}
+
+.card-meta h3 {
+  margin: .5rem 0 .25rem
+}
+
+.preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: .5rem 0
+}
+
+.preview-toggle {
+  width: 100%;
+  display: flex;
+  justify-content: flex-start;
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: -.25rem 0 .5rem;
+  cursor: pointer
+}
+
+.preview-toggle-icon {
+  font-size: 1.5rem;
+  line-height: 1
+}
+
+.link {
+  color: var(--accent);
+  text-decoration: none
+}
+
+.link:hover {
+  text-decoration: underline
+}
+
+.week-grid.preview .day-grid.preview {
+  grid-template-rows: repeat(24, 80px);
+  /* Much taller slots for readability */
+}
+
+.week-grid.preview .cell {
+  opacity: .9
+}
+
+/* Emphasize today's column so users can orient quickly */
+.day.today {
+  background: rgba(255, 106, 0, .06);
+  border-radius: 6px;
+  padding: .25rem
+}
+
+.day.today .day-header {
+  color: var(--accent);
+  font-weight: 700
+}
+
+.site-footer {
+  margin-top: 2rem;
+  border-top: 1px solid var(--border);
+  padding-top: 1rem;
+  color: var(--muted);
+  display: flex;
+  justify-content: space-between
+}
+
+@media (max-width:800px) {
+  .hero {
+    grid-template-columns: 1fr
+  }
+
+  .featured {
+    grid-template-columns: 1fr
+  }
+}
+
+/* 
+ * Admin Minute Matrix 
+ * Usage: `MinuteMatrix` component in `App.jsx`.
+ * Purpose: Allows precise minute selection (0-59) without a dropdown.
+ * Design Choice: 10-column grid makes it easy to find "10, 20, 30" etc.
+ */
+.minute-matrix-container {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: #f9f9f9;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.minute-matrix {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  /* 10 columns for 0-9, 10-19 etc */
+  gap: 4px;
+  margin-top: 0.5rem;
+}
+
+.minute-cell {
+  aspect-ratio: 1;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: bold;
+  color: #555;
+}
+
+.minute-cell:hover {
+  border-color: var(--accent);
+  background: #fff8f0;
+}
+
+.minute-cell.booked {
+  background: #ffe8ef;
+  color: #a00;
+  border-color: #fcc;
+}
+
+.minute-cell.selected {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent2);
+}
+
+.minute-number {
+  display: block;
+  /* Always show numbers in matrix */
+}
+
+/* Hour Selection List */
+.hour-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.hour-btn {
+  background: #fff;
+  border: 1px solid var(--border);
+  padding: 0.5rem 0.75rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 2px;
+  line-height: 1.1;
+}
+
+.hour-time {
+  font-weight: 600;
+}
+
+.hour-status {
+  font-size: 0.7rem;
+  opacity: 0.85;
+}
+
+.hour-btn:hover {
+  border-color: var(--accent);
+}
+
+.hour-btn.has-bookings {
+  border-bottom: 3px solid #ffc0cb;
+}
+
+.hour-btn.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent2);
+}
+
+.calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.25rem
+}
+
+.calendar-card {
+  padding: 0.5rem
+}
+
+.calendar-nav {
+  display: flex;
+  gap: 0.5rem
+}
+
+.calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.15rem;
+  margin-bottom: 0.15rem
+}
+
+.calendar-weekday {
+  text-align: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--muted)
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.15rem;
+  justify-items: center
+}
+
+.calendar-cell {
+  border: 1px solid var(--border);
+  background: #fff;
+  border-radius: 6px;
+  min-height: 22px;
+  width: 34px;
+  padding: 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center
+}
+
+.calendar-cell:hover {
+  border-color: var(--accent);
+  background: #fff8f0
+}
+
+.calendar-cell.outside {
+  opacity: 0.45
+}
+
+.calendar-cell.booked {
+  border-color: #ffc0cb;
+  background: #ffe8ef
+}
+
+.calendar-cell.today {
+  outline: 2px solid rgba(255, 106, 0, 0.4);
+  outline-offset: 1px
+}
+
+.calendar-cell.selected {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent2)
+}
+
+.calendar-cell:disabled {
+  cursor: not-allowed;
+  opacity: 0.25
+}
+
+/* 
+ * Visitor Schedule Enhancements 
+ * Usage: `SchedulePreview` component in `App.jsx`.
+ * Purpose: Improves readability of the schedule on the home page.
+ */
+
+/* 
+ * Scrollable Container
+ * Design Choice: Fixed max-height with scroll to prevent the schedule 
+ * from dominating the entire page vertical space.
+ */
+.schedule-scroll-container {
+  max-height: 500px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.schedule-note {
+  margin: 0.75rem 0;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff8f0;
+  color: var(--text);
+}
+
+.week-bookings-grid {
+  gap: 1rem;
+}
+
+.day-bookings {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.booking-item {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  gap: 0.5rem;
+  align-items: baseline;
+  padding: 0.25rem 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.booking-item:last-child {
+  border-bottom: none;
+}
+
+.booking-time {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.8rem;
+  opacity: 0.85;
+  white-space: nowrap;
+}
+
+.week-grid.preview {
+  /* Ensure it takes full width inside scroll container */
+  min-width: 800px;
+  /* Force horizontal scroll on small screens if needed */
+}
+
+.day-grid.preview {
+  grid-template-rows: repeat(24, 50px);
+  /* Taller cells for preview */
+}
+
+.booking-label.small {
+  font-size: 0.65rem;
+  padding: 2px 4px;
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.time-range {
+  font-family: monospace;
+  opacity: 0.9;
+  font-size: 0.6rem;
+  background: rgba(0, 0, 0, 0.1);
+  padding: 0 2px;
+  border-radius: 2px;
+}
+
+/* 
+ * Booking Title Styling
+ * Design Choice: Truncates long titles with ellipsis to fit the slot.
+ */
+.booking-title {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 
+ * Visitor Grid Overrides
+ * Design Choice: Taller rows (60px) to accommodate Title + Timeframe.
+ */
+.day-grid {
+  /* Increase height to fit text */
+  grid-template-rows: repeat(24, 60px);
+}
+
+.cell {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding: 2px;
+  font-size: 0.75rem;
+}
+
+.cell.has-content {
+  background: #fff;
+}
+
+.booking-label {
+  background: var(--accent2);
+  color: #fff;
+  padding: 2px 4px;
+  border-radius: 3px;
+  margin-bottom: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.7rem;
+}
+
+.empty-label {
+  color: #ccc;
+  font-style: italic;
+  text-align: center;
+  margin-top: auto;
+  margin-bottom: auto;
+}
+
+/* Form Enhancements */
+.checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  grid-template-columns: auto 1fr !important;
+}
+
+.info-box {
+  background: #eef;
+  padding: 0.5rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.warn {
+  color: #b00;
+  font-weight: bold;
+}

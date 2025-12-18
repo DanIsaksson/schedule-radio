@@ -1,0 +1,59 @@
+// A.1 [Legacy.Schedule] Legacy in-memory schedule read endpoints ("doors") under /schedule.
+// What: Returns the current in-memory ScheduleData minute-grid (Days → Hours → Minutes[60]).
+// Why: Teaching sandbox for learning endpoints; the real app UI uses the DB-backed /db/schedule/* endpoints.
+// Where:
+// - Mapped in Program.cs via app.MapScheduleEndpoints().
+// - Used by API/wwwroot demo pages and endpoint testing labs.
+//
+// --- FILE: Endpoints/ScheduleEndpoints.cs ---
+// A.5a Legacy READ endpoints backed by in-memory ScheduleData (not the DB path).
+// - These /schedule/* routes expose the in-memory "whiteboard" schedule described in Program.cs A.5 and Models/ScheduleModels.cs A.3a.
+// - Useful for demos and labs; consumer/React UI now uses the DB-backed /db/schedule/* endpoints (see ScheduleDbEndpoints.cs).
+using API; // Use our new models
+using API.Actions; // Keep using the actions from the original file
+using API.Models;
+
+namespace API.Endpoints
+{
+    public static class ScheduleEndpoints
+    {
+        // Extension method: I attach these routes to WebApplication (app).
+        public static void MapScheduleEndpoints(this WebApplication app)
+        {
+            // Group: /schedule (legacy in-memory reads) [B.25b]
+            var scheduleGroup = app.MapGroup("/schedule");
+
+            // GET /schedule => return the whole in-memory 7-day schedule (Models/ScheduleModels.cs)
+            scheduleGroup.MapGet("/", (ScheduleData schedule) =>
+            {
+                // 'schedule' is injected (registered in Program.cs as a singleton).
+                return Results.Ok(schedule);
+            });
+
+            // GET /schedule/today => filter the in-memory schedule to today
+            scheduleGroup.MapGet("/today", (ScheduleData schedule) =>
+            {
+                // FirstOrDefault: return first match or null if none.
+                DaySchedule? today = schedule.Days
+                    .FirstOrDefault(d => d.Date.Date == DateTime.Today);
+
+                // Not found => 404. Found => 200 with DaySchedule.
+                if (today is null)
+                {
+                    return Results.NotFound("No schedule found for today.");
+                }
+
+                // If we found the schedule, we return it with an HTTP 200 OK response.
+                // Results.Ok() wraps our data in a standard success response.
+                return Results.Ok(today);
+            });
+
+            // GET /schedule/7days => build a copy of the 7-day view from in-memory data (Actions.cs)
+            scheduleGroup.MapGet("/7days", (ScheduleData schedule) =>
+            {
+                var sevenDaySchedule = ScheduleQueries.GetSevenDays(schedule);
+                return Results.Ok(sevenDaySchedule);
+            });
+        }
+    }
+}

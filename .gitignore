@@ -1,3 +1,13 @@
+# Custom
+# [Ee]xercise/
+# [Ii]teration/
+# [Ll]essons-React/
+# [Dd]esign-context/
+# [Ii]nteractive-Lesson/
+
+# Markdown
+# *.md
+
 # VS Code
 .vscode/
 *.code-workspace
@@ -23,9 +33,16 @@ bld/
 
 # Node
 node_modules/
-npm-debug.log
-yarn-debug.log
-yarn-error.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+dist/
+dist-ssr/
+.vite/
+.env
+.env.*
+!.env.example
+/package-lock.json
 
 # Compiled files
 *.com
@@ -49,7 +66,11 @@ yarn-error.log
 *.log
 *.sql
 *.sqlite
-
+*.db
+*.db-*
+# Because we can specify specific files to allow! :D
+!API/scheduler.db
+ 
 # OS generated files
 .DS_Store
 .DS_Store?
