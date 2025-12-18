@@ -29,21 +29,26 @@ namespace API.Actions
         // Build a full 7‑day schedule starting from 'start' (usually DateTime.Today)
         public static ScheduleData BuildSevenDaySchedule(SchedulerContext db, DateTime start)
         {
-            var startDate = start.Date; // DateTime is built-in; .Date drops the time-of-day so comparisons are clean
-            var endDate = startDate.AddDays(7); // +7 days; I treat end as exclusive (include >= startDate and < endDate)
+            return BuildScheduleRange(db, start, dayCount: 7);
+        }
 
-            var schedule = new ScheduleData(); // Step A: start from a blank 7-day grid (ScheduleData pre-creates 7 DaySchedule entries).
+        public static ScheduleData BuildScheduleRange(SchedulerContext db, DateTime startDate, int dayCount)
+        {
+            var start = startDate.Date; // DateTime is built-in; .Date drops the time-of-day so comparisons are clean
+            var end = start.AddDays(dayCount); // +N days; I treat end as exclusive (include >= start and < end)
 
-            // Step B: get all bookings in [startDate, endDate) from the DB in one query
+            var schedule = new ScheduleData(start, dayCount);
+
+            // Step B: get all bookings in [start, end) from the DB in one query
             var rows = db.Events // 'db' is EF DbContext; Events is my table (DbSet<EventEntity>)
-                .Where(e => e.Date >= startDate && e.Date < endDate) // build SQL filter (not executed yet)
+                .Where(e => e.Date >= start && e.Date < end) // build SQL filter (not executed yet)
                 .ToList(); // run the query now and give me C# objects
 
             foreach (var row in rows)
             {
-                // Step C: find the matching Day and Hour in our 7-day grid
+                // Step C: find the matching Day and Hour in our grid
                 var day = schedule.Days.FirstOrDefault(d => d.Date == row.Date); // FirstOrDefault: first match or null
-                if (day is null) continue; // row outside our 7-day list
+                if (day is null) continue; // row outside our list
 
                 var hour = day.Hours.FirstOrDefault(h => h.Hour == row.Hour); // same idea for Hour bin
                 if (hour is null) continue; // guard
@@ -74,6 +79,12 @@ namespace API.Actions
         {
             var full = BuildSevenDaySchedule(db, today);
             return full.Days.FirstOrDefault(d => d.Date == today.Date);
+        }
+
+        public static DaySchedule? BuildDay(SchedulerContext db, DateTime date)
+        {
+            var full = BuildScheduleRange(db, date, dayCount: 1);
+            return full.Days.FirstOrDefault(d => d.Date == date.Date);
         }
     }
 

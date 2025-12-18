@@ -567,6 +567,88 @@ button {
   border-color: var(--accent2);
 }
 
+.calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.25rem
+}
+
+.calendar-card {
+  padding: 0.5rem
+}
+
+.calendar-nav {
+  display: flex;
+  gap: 0.5rem
+}
+
+.calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.15rem;
+  margin-bottom: 0.15rem
+}
+
+.calendar-weekday {
+  text-align: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--muted)
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.15rem;
+  justify-items: center
+}
+
+.calendar-cell {
+  border: 1px solid var(--border);
+  background: #fff;
+  border-radius: 6px;
+  min-height: 22px;
+  width: 34px;
+  padding: 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center
+}
+
+.calendar-cell:hover {
+  border-color: var(--accent);
+  background: #fff8f0
+}
+
+.calendar-cell.outside {
+  opacity: 0.45
+}
+
+.calendar-cell.booked {
+  border-color: #ffc0cb;
+  background: #ffe8ef
+}
+
+.calendar-cell.today {
+  outline: 2px solid rgba(255, 106, 0, 0.4);
+  outline-offset: 1px
+}
+
+.calendar-cell.selected {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent2)
+}
+
+.calendar-cell:disabled {
+  cursor: not-allowed;
+  opacity: 0.25
+}
+
 /* 
  * Visitor Schedule Enhancements 
  * Usage: `SchedulePreview` component in `App.jsx`.

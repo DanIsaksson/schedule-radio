@@ -44,7 +44,7 @@ function MinuteMatrix({ hour, minutes, onMinuteClick, selection }) {
 
   return (
     <div className="minute-matrix-container">
-      <h3>Välj tid för kl {String(hour).padStart(2, '0')}:00</h3>
+      <h3>Välj tid för kl {String(hour).padStart(2, '0')}</h3>
       <div className="minute-matrix">
         {minutes.map((isBooked, i) => (
           <div
@@ -394,11 +394,43 @@ function SchedulePreview({ week }) {
  * It receives data (week, today) and actions (submitBooking, loadToday) as props from the App component.
  * This is a "Controlled Component" because the form state is managed by React (passed down via 'form' prop).
  */
-function AdminPanel({ week, today, form, onPickHour, onMinuteClick, onChange, submitBooking, loading, loadToday, error, successMessage, selection }) {
+function AdminPanel({ week, today, form, selectedDate, selectedHour, warningMessage, calendarLabel, calendarCells, calendarLoading, calendarError, isBookingInPast, onPickHour, onMinuteClick, onChange, submitBooking, loading, loadToday, error, successMessage, selection }) {
   // Derived logic for Admin details
   const isLive = form.eventType === 'Live'
   const studio = isLive ? (form.hostCount === 1 ? 'Studio 1 (Billigare)' : 'Studio 2') : 'Standard'
   const extraCost = isLive && form.hasGuest ? 'Extra Kostnad: Gästtransport' : ''
+
+  const selectedYear = Number(String(selectedDate).slice(0, 4))
+  const selectedMonth = Number(String(selectedDate).slice(5, 7))
+  const selectedDay = Number(String(selectedDate).slice(8, 10))
+
+  const daysInSelectedMonth = Number.isFinite(selectedYear) && Number.isFinite(selectedMonth)
+    ? new Date(selectedYear, selectedMonth, 0).getDate()
+    : 31
+
+  const buildIsoDate = (year, month, day) => {
+    const clampedDay = Math.min(Math.max(1, day), new Date(year, month, 0).getDate())
+    const iso = new Date(Date.UTC(year, month - 1, clampedDay)).toISOString().slice(0, 10)
+    return iso
+  }
+
+  const handleYearChange = (e) => {
+    const year = Number(e.target.value)
+    if (!Number.isFinite(year)) return
+    onPickHour?.(buildIsoDate(year, selectedMonth || 1, selectedDay || 1), selectedHour)
+  }
+
+  const handleMonthChange = (e) => {
+    const month = Number(e.target.value)
+    if (!Number.isFinite(month)) return
+    onPickHour?.(buildIsoDate(selectedYear || new Date().getFullYear(), month, selectedDay || 1), selectedHour)
+  }
+
+  const handleDayChange = (e) => {
+    const day = Number(e.target.value)
+    if (!Number.isFinite(day)) return
+    onPickHour?.(buildIsoDate(selectedYear || new Date().getFullYear(), selectedMonth || 1, day), selectedHour)
+  }
 
   // Local state for collapsing the week view
   const [showWeek, setShowWeek] = useState(false)
@@ -408,12 +440,13 @@ function AdminPanel({ week, today, form, onPickHour, onMinuteClick, onChange, su
       {/* Toolbar Section */}
       <section className="controls">
         <button onClick={loadToday} disabled={loading}>
-          {loading ? 'Laddar…' : 'Uppdatera Idag'}
+          {loading ? 'Laddar…' : 'Uppdatera'}
         </button>
       </section>
 
       {/* Feedback Section: Show error or success messages if they exist */}
       {error && <div className="alert error">Fel: {error}</div>}
+      {warningMessage && <div className="alert error">{warningMessage}</div>}
       {successMessage && <div className="alert ok">{successMessage}</div>}
 
       <section className="grid">
@@ -425,7 +458,7 @@ function AdminPanel({ week, today, form, onPickHour, onMinuteClick, onChange, su
               onClick={() => setShowWeek(!showWeek)}
               style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
             >
-              <h2 style={{ margin: 0 }}>Vecka (Idag + 6 dagar)</h2>
+              <h2 style={{ margin: 0 }}>Den kommande veckan...</h2>
               <span style={{ fontSize: '1.5rem' }}>{showWeek ? '−' : '+'}</span>
             </div>
             {showWeek && (
@@ -436,14 +469,44 @@ function AdminPanel({ week, today, form, onPickHour, onMinuteClick, onChange, su
           </div>
         )}
 
+        <div className="card calendar-card" style={{ gridColumn: '1 / -1' }}>
+          <div className="calendar-header">
+            <h2 style={{ margin: 0 }}>{calendarLabel}</h2>
+            <div className="calendar-nav">
+              <button type="button" onClick={() => onPickHour?.('__prevMonth__', selectedHour)}>‹</button>
+              <button type="button" onClick={() => onPickHour?.('__nextMonth__', selectedHour)}>›</button>
+            </div>
+          </div>
+          {calendarLoading && <p className="date">Laddar kalender…</p>}
+          {calendarError && <div className="alert error">Fel: {calendarError}</div>}
+          <div className="calendar-weekdays">
+            {['Mån', 'Tis', 'Ons', 'Tor', 'Fre', 'Lör', 'Sön'].map(d => (
+              <div key={d} className="calendar-weekday">{d}</div>
+            ))}
+          </div>
+          <div className="calendar-grid">
+            {(calendarCells ?? []).map(cell => (
+              <button
+                key={cell.iso}
+                type="button"
+                className={`calendar-cell${cell.isOutsideMonth ? ' outside' : ''}${cell.isBooked ? ' booked' : ''}${cell.isSelected ? ' selected' : ''}${cell.isToday ? ' today' : ''}`}
+                onClick={() => onPickHour?.(cell.iso, selectedHour)}
+                disabled={cell.isOutOfRange}
+              >
+                {cell.day}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Today's Detailed View */}
         <div className="card">
-          <h2>Idag (Välj timme för att boka)</h2>
+          <h2>Timme att boka på valt datum</h2>
           {!today ? (
             <p>Laddar…</p>
           ) : (
             <>
-              <p className="date">{new Date(today.date ?? Date.now()).toLocaleDateString()}</p>
+              <p className="date">{new Date(selectedDate).toLocaleDateString('sv-SE')}</p>
 
               {/* Hour Selection List */}
               <div className="hour-list">
@@ -451,12 +514,12 @@ function AdminPanel({ week, today, form, onPickHour, onMinuteClick, onChange, su
                   const bookedMinutesCount = hourData.minutes.filter(Boolean).length
                   const isBooked = bookedMinutesCount > 0
                   const isFullyBooked = bookedMinutesCount === 60
-                  const isSelected = form.hour === hourData.hour
+                  const isSelected = selectedHour === hourData.hour
                   return (
                     <button
                       key={hourData.hour}
                       className={`hour-btn ${isBooked ? 'has-bookings' : ''} ${isSelected ? 'active' : ''}`}
-                      onClick={() => onChange({ target: { name: 'hour', value: hourData.hour } })}
+                      onClick={() => onPickHour?.(selectedDate, hourData.hour)}
                     >
                       <span className="hour-time">{String(hourData.hour).padStart(2, '0')}:00</span>
                       {isBooked && (
@@ -468,12 +531,12 @@ function AdminPanel({ week, today, form, onPickHour, onMinuteClick, onChange, su
               </div>
 
               {/* Minute Matrix for Selected Hour */}
-              {today.hours.find(h => h.hour === form.hour) && (
+              {today.hours.find(h => h.hour === selectedHour) && (
                 <MinuteMatrix
-                  hour={form.hour}
-                  minutes={today.hours.find(h => h.hour === form.hour).minutes}
+                  hour={selectedHour}
+                  minutes={today.hours.find(h => h.hour === selectedHour).minutes}
                   onMinuteClick={onMinuteClick}
-                  selection={selection && selection.hour === form.hour ? selection : null}
+                  selection={selection && selection.hour === selectedHour ? selection : null}
                 />
               )}
             </>
@@ -483,6 +546,34 @@ function AdminPanel({ week, today, form, onPickHour, onMinuteClick, onChange, su
         {/* Booking Form */}
         <div className="card">
           <h2>Ny bokning</h2>
+
+          <div className="form" style={{ marginBottom: '1rem' }}>
+            <label>
+              År
+              <select value={selectedYear} onChange={handleYearChange}>
+                {Array.from({ length: 3 }, (_, i) => new Date().getFullYear() - 1 + i).map(y => (
+                  <option key={y} value={y}>{y}</option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Månad
+              <select value={selectedMonth} onChange={handleMonthChange}>
+                {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
+                  <option key={m} value={m}>{String(m).padStart(2, '0')}</option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Dag
+              <select value={selectedDay} onChange={handleDayChange}>
+                {Array.from({ length: daysInSelectedMonth }, (_, i) => i + 1).map(d => (
+                  <option key={d} value={d}>{String(d).padStart(2, '0')}</option>
+                ))}
+              </select>
+            </label>
+          </div>
+
           <form onSubmit={submitBooking} className="form">
             <label>
               Titel
@@ -516,11 +607,11 @@ function AdminPanel({ week, today, form, onPickHour, onMinuteClick, onChange, su
             <label>
               Datum
               {/* Controlled Input: value comes from state, onChange updates state */}
-              <input type="date" name="date" value={form.date} onChange={onChange} />
+              <input type="date" name="date" value={form.date} onChange={onChange} disabled />
             </label>
             <label>
               Timme
-              <input type="number" name="hour" min="0" max="23" value={form.hour} onChange={onChange} />
+              <input type="number" name="hour" min="0" max="23" value={form.hour} onChange={onChange} disabled />
             </label>
             <label>
               Startminut
@@ -531,10 +622,11 @@ function AdminPanel({ week, today, form, onPickHour, onMinuteClick, onChange, su
               <input type="number" name="endMinute" min="1" max="60" value={form.endMinute} onChange={onChange} />
             </label>
             <div className="form-actions">
-              <button type="submit">Boka</button>
+              <button type="submit" disabled={isBookingInPast}>Boka</button>
             </div>
           </form>
         </div>
+
       </section>
     </>
   )
@@ -562,6 +654,18 @@ export default function App({ route = '#/' }) {
   const { user, roles, mustChangePassword, isLoading: authLoading, refreshMe, login, logout } = useAuth()
   const isLoggedIn = Boolean(user)
 
+  const todayIso = new Date().toISOString().slice(0, 10)
+  const minViewIso = (() => {
+    const d = new Date()
+    d.setFullYear(d.getFullYear() - 1)
+    return d.toISOString().slice(0, 10)
+  })()
+  const maxViewIso = (() => {
+    const d = new Date()
+    d.setFullYear(d.getFullYear() + 1)
+    return d.toISOString().slice(0, 10)
+  })()
+
   // B.8 State definitions (the component's "memory").
   // - today: one DaySchedule for the Admin "Today" list (built from /db/schedule/today).
   // - week: full 7-day schedule window for grids and previews (from /db/schedule/7days).
@@ -572,6 +676,17 @@ export default function App({ route = '#/' }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
+
+  const [selectedDate, setSelectedDate] = useState(todayIso)
+  const [selectedHour, setSelectedHour] = useState(12)
+  const [warningMessage, setWarningMessage] = useState('')
+  const [calendarMonth, setCalendarMonth] = useState({
+    year: Number(todayIso.slice(0, 4)),
+    month: Number(todayIso.slice(5, 7))
+  })
+  const [calendarRange, setCalendarRange] = useState(null)
+  const [calendarLoading, setCalendarLoading] = useState(false)
+  const [calendarError, setCalendarError] = useState('')
 
   const [portalEmail, setPortalEmail] = useState('')
   const [portalPassword, setPortalPassword] = useState('')
@@ -614,6 +729,25 @@ export default function App({ route = '#/' }) {
   // Selection state for the "two-step loop"
   const [selection, setSelection] = useState(null) // { hour, start, end, step: 1|2 }
 
+  const normalizeBackendDateToIso = (value) => {
+    if (!value) return ''
+    const text = String(value)
+    return text.length >= 10 ? text.slice(0, 10) : text
+  }
+
+  const clampToViewWindow = (iso) => {
+    if (!iso) return todayIso
+    if (iso < minViewIso) return minViewIso
+    if (iso > maxViewIso) return maxViewIso
+    return iso
+  }
+
+  const handleSelectedDateChange = (nextIso) => {
+    const clamped = clampToViewWindow(normalizeBackendDateToIso(nextIso))
+    setSelectedDate(clamped)
+    setCalendarMonth({ year: Number(clamped.slice(0, 4)), month: Number(clamped.slice(5, 7)) })
+  }
+
   const handleMinuteClick = (hour, minute) => {
     setSelection(prev => {
       // If starting new selection or switching hours, reset to step 1
@@ -641,11 +775,10 @@ export default function App({ route = '#/' }) {
   //   -> ScheduleProjectionDb.BuildSevenDaySchedule/BuildToday [B.10c] (paint minute grid from DB Events) -> JSON response -> setToday(...) here.
   //
   // C.10 'async' and 'await' work exactly like in C# async methods.
-  const loadToday = async () => {
+  const loadSelectedDay = async (dateIso) => {
     setLoading(true); setError(''); setSuccessMessage('')
     try {
-      // C.11 fetch: native browser call, equivalent to C# HttpClient.GetAsync().
-      const res = await fetch('/db/schedule/today')
+      const res = await fetch(`/db/schedule/day?date=${encodeURIComponent(dateIso)}`)
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
 
       // C.12 Parse JSON (like JsonSerializer.DeserializeAsync<T>()).
@@ -668,6 +801,34 @@ export default function App({ route = '#/' }) {
     } finally {
       // C.13 finally: ensure loading flag is turned off whether we succeeded or failed.
       setLoading(false)
+    }
+  }
+
+  const loadToday = async () => {
+    await loadSelectedDay(selectedDate)
+  }
+
+  const loadCalendarRange = async () => {
+    setCalendarLoading(true)
+    setCalendarError('')
+
+    try {
+      const firstOfMonth = new Date(Date.UTC(calendarMonth.year, calendarMonth.month - 1, 1))
+      const weekday = firstOfMonth.getUTCDay()
+      const mondayIndex = (weekday + 6) % 7
+      const gridStart = new Date(firstOfMonth)
+      gridStart.setUTCDate(gridStart.getUTCDate() - mondayIndex)
+      const startIso = gridStart.toISOString().slice(0, 10)
+
+      const res = await fetch(`/db/schedule/range?start=${encodeURIComponent(startIso)}&days=42`)
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const data = await res.json()
+      setCalendarRange(data)
+    } catch (e) {
+      setCalendarError(e.message || String(e))
+      setCalendarRange(null)
+    } finally {
+      setCalendarLoading(false)
     }
   }
 
@@ -801,9 +962,27 @@ export default function App({ route = '#/' }) {
   // - Kicks off both schedule-loading flows so the UI can show Today + Week without a manual refresh.
   // - This ties into the codemap step: "Initial Schedule Data Loading from Backend".
   useEffect(() => {
-    loadToday();
     loadWeek()
   }, [])
+
+  useEffect(() => {
+    setForm(f => ({ ...f, date: selectedDate }))
+    setSelection(null)
+
+    if (selectedDate < todayIso) {
+      setWarningMessage('Bokningar går inte boka bakåt i tiden.')
+    } else {
+      setWarningMessage('')
+    }
+  }, [selectedDate])
+
+  useEffect(() => {
+    loadSelectedDay(selectedDate)
+  }, [selectedDate])
+
+  useEffect(() => {
+    loadCalendarRange()
+  }, [calendarMonth.year, calendarMonth.month])
 
   useEffect(() => {
     if (route.startsWith('#/admin')) {
@@ -882,6 +1061,11 @@ export default function App({ route = '#/' }) {
     // C.15 Prevent default browser form submission (which would reload the page).
     e.preventDefault()
 
+    if (selectedDate < todayIso) {
+      setWarningMessage('Bokningar går inte boka bakåt i tiden.')
+      return
+    }
+
     setIsPosting(true); setError(''); setSuccessMessage('')
     try {
       // C.16 Build query string to match Minimal API parameter binding.
@@ -929,7 +1113,7 @@ export default function App({ route = '#/' }) {
 
       // B.16 Refresh both Today and Week to show the newly created booking.
       // - Promise.all is like Task.WhenAll in C#: wait for both loads to finish before considering the refresh done.
-      await Promise.all([loadToday(), loadWeek()])
+      await Promise.all([loadToday(), loadWeek(), loadCalendarRange()])
     } catch (e2) {
       setError(e2.message || String(e2))
     } finally {
@@ -1035,6 +1219,71 @@ export default function App({ route = '#/' }) {
   const isPortalChangePasswordRoute = route.startsWith('#/portal/change-password')
   const isBookings = route.startsWith('#/bookings') || route.startsWith('#/admin')
   const isStaffRoute = route.startsWith('#/portal') || isBookings
+
+  const isBookingInPast = selectedDate < todayIso
+
+  const bookedDatesSet = (() => {
+    const set = new Set()
+    const days = calendarRange?.days ?? calendarRange?.Days ?? []
+    for (const day of days) {
+      const dayIso = normalizeBackendDateToIso(day?.date ?? day?.Date)
+      const rawHours = day?.hours ?? day?.Hours ?? []
+      let isBooked = false
+      for (const h of rawHours) {
+        const minutes = (h?.minutes ?? h?.Minutes) ?? []
+        if (Array.isArray(minutes) && minutes.some(Boolean)) {
+          isBooked = true
+          break
+        }
+      }
+      if (dayIso && isBooked) {
+        set.add(dayIso)
+      }
+    }
+    return set
+  })()
+
+  const calendarCells = (() => {
+    const firstOfMonth = new Date(Date.UTC(calendarMonth.year, calendarMonth.month - 1, 1))
+    const weekday = firstOfMonth.getUTCDay()
+    const mondayIndex = (weekday + 6) % 7
+    const gridStart = new Date(firstOfMonth)
+    gridStart.setUTCDate(gridStart.getUTCDate() - mondayIndex)
+
+    const cells = []
+    for (let i = 0; i < 42; i++) {
+      const d = new Date(gridStart)
+      d.setUTCDate(gridStart.getUTCDate() + i)
+      const iso = d.toISOString().slice(0, 10)
+      const isOutsideMonth = d.getUTCMonth() !== (calendarMonth.month - 1) || d.getUTCFullYear() !== calendarMonth.year
+      const isOutOfRange = iso < minViewIso || iso > maxViewIso
+      cells.push({
+        iso,
+        day: d.getUTCDate(),
+        isOutsideMonth,
+        isOutOfRange,
+        isBooked: bookedDatesSet.has(iso),
+        isSelected: iso === selectedDate,
+        isToday: iso === todayIso
+      })
+    }
+    return cells
+  })()
+
+  const calendarLabel = (() => {
+    const d = new Date(Date.UTC(calendarMonth.year, calendarMonth.month - 1, 1))
+    const monthName = d.toLocaleDateString('sv-SE', { month: 'long' })
+    const prettyMonth = monthName ? `${monthName.charAt(0).toUpperCase()}${monthName.slice(1)}` : ''
+    return `${prettyMonth} - ${calendarMonth.year}`
+  })()
+
+  const navigateMonth = (delta) => {
+    const current = new Date(Date.UTC(calendarMonth.year, calendarMonth.month - 1, 1))
+    current.setUTCMonth(current.getUTCMonth() + delta)
+    const nextIso = current.toISOString().slice(0, 10)
+    const clamped = clampToViewWindow(nextIso)
+    setCalendarMonth({ year: Number(clamped.slice(0, 4)), month: Number(clamped.slice(5, 7)) })
+  }
 
   return (
     <div className="container">
@@ -1273,12 +1522,43 @@ export default function App({ route = '#/' }) {
           week={week}
           today={today}
           form={form}
+          selectedDate={selectedDate}
+          selectedHour={selectedHour}
+          warningMessage={warningMessage}
+          calendarLabel={calendarLabel}
+          calendarCells={calendarCells}
+          calendarLoading={calendarLoading}
+          calendarError={calendarError}
+          isBookingInPast={isBookingInPast}
           // Callback for clicking a cell: Update form state
-          onPickHour={(date, hour) => setForm(f => ({
-            ...f,
-            date: (date || new Date()).toString().slice(0, 10),
-            hour
-          }))}
+          onPickHour={(date, hour) => {
+            if (date === '__prevMonth__') {
+              navigateMonth(-1)
+              return
+            }
+
+            if (date === '__nextMonth__') {
+              navigateMonth(1)
+              return
+            }
+
+            const nextIsoRaw = normalizeBackendDateToIso(date || todayIso)
+            const nextIso = clampToViewWindow(nextIsoRaw)
+            const didChangeDate = nextIso !== selectedDate
+            const didChangeHour = typeof hour === 'number' && Number.isFinite(hour) && hour !== selectedHour
+
+            if (didChangeDate) {
+              handleSelectedDateChange(nextIso)
+              setForm(f => ({ ...f, date: nextIso }))
+            }
+
+            if (didChangeHour) {
+              setSelectedHour(hour)
+              setForm(f => ({ ...f, hour }))
+            }
+
+            setSelection(null)
+          }}
           onMinuteClick={handleMinuteClick}
           selection={selection}
           onChange={onChange}

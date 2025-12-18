@@ -22,12 +22,15 @@ namespace API.Models // A new namespace to avoid conflicts
         public List<DaySchedule> Days { get; } = new List<DaySchedule>();
 
         // Constructor: set up the rolling 7-day list.
-        public ScheduleData()
+        // Create 7 days starting from today
+        public ScheduleData() : this(DateTime.Today, 7) { }
+
+        public ScheduleData(DateTime startDate, int dayCount)
         {
-            // Create 7 days starting from today
-            for (int i = 0; i < 7; i++)
+            var start = startDate.Date;
+            for (int i = 0; i < dayCount; i++)
             {
-                Days.Add(new DaySchedule(DateTime.Today.AddDays(i)));
+                Days.Add(new DaySchedule(start.AddDays(i)));
             }
         }
     }

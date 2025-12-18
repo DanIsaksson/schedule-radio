@@ -12,6 +12,7 @@
 using API.Actions; // ScheduleProjectionDb
 using API.Data; // SchedulerContext
 using API.Models; // ScheduleData, DaySchedule
+using System.Globalization;
 
 namespace API.Endpoints
 {
@@ -37,6 +38,45 @@ namespace API.Endpoints
             {
                 ScheduleData all = ScheduleProjectionDb.BuildSevenDaySchedule(db, DateTime.Today);
                 return Results.Ok(all);
+            });
+
+            group.MapGet("/day", (SchedulerContext db, string? date) =>
+            {
+                if (string.IsNullOrWhiteSpace(date))
+                {
+                    return Results.BadRequest("Missing 'date'. Expected format: YYYY-MM-DD.");
+                }
+
+                if (!DateTime.TryParseExact(date, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var day))
+                {
+                    return Results.BadRequest("Invalid 'date'. Expected format: YYYY-MM-DD.");
+                }
+
+                DaySchedule? schedule = ScheduleProjectionDb.BuildDay(db, day);
+                return schedule is null
+                    ? Results.NotFound($"No schedule for date {day:yyyy-MM-dd}.")
+                    : Results.Ok(schedule);
+            });
+
+            group.MapGet("/range", (SchedulerContext db, string? start, int days = 42) =>
+            {
+                if (string.IsNullOrWhiteSpace(start))
+                {
+                    return Results.BadRequest("Missing 'start'. Expected format: YYYY-MM-DD.");
+                }
+
+                if (!DateTime.TryParseExact(start, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var startDate))
+                {
+                    return Results.BadRequest("Invalid 'start'. Expected format: YYYY-MM-DD.");
+                }
+
+                if (days < 1 || days > 366)
+                {
+                    return Results.BadRequest("Invalid 'days'. Expected 1..366.");
+                }
+
+                ScheduleData schedule = ScheduleProjectionDb.BuildScheduleRange(db, startDate, days);
+                return Results.Ok(schedule);
             });
         }
     }
