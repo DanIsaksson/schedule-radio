@@ -1,3 +1,10 @@
+// A.1 [Legacy.Schedule] Legacy in-memory schedule read endpoints ("doors") under /schedule.
+// What: Returns the current in-memory ScheduleData minute-grid (Days → Hours → Minutes[60]).
+// Why: Teaching sandbox for learning endpoints; the real app UI uses the DB-backed /db/schedule/* endpoints.
+// Where:
+// - Mapped in Program.cs via app.MapScheduleEndpoints().
+// - Used by API/wwwroot demo pages and endpoint testing labs.
+//
 // --- FILE: Endpoints/ScheduleEndpoints.cs ---
 // A.5a Legacy READ endpoints backed by in-memory ScheduleData (not the DB path).
 // - These /schedule/* routes expose the in-memory "whiteboard" schedule described in Program.cs A.5 and Models/ScheduleModels.cs A.3a.

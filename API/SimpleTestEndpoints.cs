@@ -1,5 +1,11 @@
-// SimpleTestEndpoints.cs
-// Your playground for learning endpoints - start here!
+// A.1 [Dev.Lab] SimpleTestEndpoints (development-only learning "doors").
+// What: A small set of GET endpoints used to practice how Minimal API routing works.
+// Why: Lets you experiment safely without touching the real booking/schedule endpoints.
+// Where:
+// - Only mapped in development: see Program.cs -> `if (app.Environment.IsDevelopment()) app.MapSimpleEndpoints();`
+// - Each app.MapGet(...) below is a "Door" the WebApplication (the "animal") can respond to.
+//
+// NOTE: The comments below are intentionally beginner-friendly exercises; we keep them as-is.
 
 namespace Scheduler.Endpoints
 {

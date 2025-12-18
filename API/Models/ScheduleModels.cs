@@ -1,3 +1,10 @@
+// A.1 [Schedule.Model] Shared schedule read model (Days → Hours → Minutes[60]).
+// What: DTOs returned by both legacy (/schedule/*) and DB-backed (/db/schedule/*) read endpoints.
+// Why: Keeps one consistent schedule shape where "no booking" means default music (filler) for the hour/minute.
+// Where:
+// - Painted from DB rows by API/Actions/ScheduleProjectionDb.cs.
+// - Consumed by the React UI in frontend/src/App.jsx (loadToday/loadWeek).
+//
 // --- FILE: Models/ScheduleModels.cs ---
 // A.3a Minute-grid structure: 7-day schedule grid model: Days → Hours → Minutes[60] (true = booked, false = free).
 // - This is the concrete data shape behind Program.cs A.3 (7 days of minute-level radio schedule).

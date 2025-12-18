@@ -1,5 +1,9 @@
 /*
  * API Static Stylesheet
+ * A.1 [API.wwwroot] Styles for backend-served demo pages.
+ * What: Provides minimal styling for API/wwwroot HTML pages.
+ * Why: Keeps the demo pages readable while staying separate from the React app styling.
+ * Where: Linked from API/wwwroot/index.html (and other static demo pages).
  *
  * Purpose: Provides minimal styling for static HTML pages served directly by the API
  * (e.g., fallback pages or simple test views).

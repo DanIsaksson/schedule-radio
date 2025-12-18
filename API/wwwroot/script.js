@@ -1,4 +1,9 @@
-
+// A.1 [API.wwwroot] Demo script for the API-served static test page.
+// What: Fetches schedule JSON and renders it into the demo HTML (API/wwwroot/index.html).
+// Why: Quick manual sanity-check without React/Vite.
+// Where:
+// - Loaded by API/wwwroot/index.html via <script src="script.js">.
+// - Separate from the real React frontend (frontend/*), which calls /db/* + /api/* through Vite.
 
 // script.js – minimal front-end logic for Scheduler Radio
 // -------------------------------------------------------

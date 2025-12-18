@@ -1,6 +1,11 @@
-// [Endpoint.Schedule.1] Schedule Endpoints
-// These endpoints are the "Doors" that the frontend uses to READ the schedule.
-// They use the database (via ScheduleProjectionDb) to get the data.
+// A.1 [Db.Schedule.Read] DB-backed schedule read endpoints ("doors").
+// What: Exposes the minute-grid schedule model as JSON:
+// - GET /db/schedule/today  => one DaySchedule
+// - GET /db/schedule/7days  => ScheduleData (7-day window)
+// Why: The frontend needs a read-only schedule view where "no booking" means default music (filler).
+// Where:
+// - Uses Actions/ScheduleProjectionDb.cs to "paint" EventEntity rows into the Days → Hours → Minutes[60] grid.
+// - Called by the React UI (frontend/src/App.jsx) when rendering schedule views.
 //
 // -> See Lesson: Interactive-Lesson/04-DB-Booking-CRUD.md (and 05-Schedule-Projection.md)
 

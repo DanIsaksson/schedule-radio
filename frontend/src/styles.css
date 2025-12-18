@@ -194,6 +194,74 @@ button {
   border-radius: 4px
 }
 
+/* B.20 [Portal.Me] Contributor profile layout (photo + details).
+ * What: Styles the #/portal/me "Konto" page profile section.
+ * Why: Keeps personal details readable and adapts when PhotoUrl is missing.
+ * Where: Markup lives in frontend/src/App.jsx under the isPortalMe route branch.
+ */
+.account-profile {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 1rem;
+  align-items: start;
+  margin-bottom: 1rem
+}
+
+.account-profile.no-photo {
+  grid-template-columns: 1fr
+}
+
+.account-photo img {
+  width: 120px;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid var(--border)
+}
+
+.account-details p {
+  margin: 0 0 .4rem
+}
+
+/* B.21 [Portal.Me] Payment history table (responsive wrapper + numeric alignment).
+ * What: Styles the read-only monthly payment rows (GET /api/contributor/payments).
+ * Why: Tables need horizontal scroll on small screens and right-aligned numbers for quick scanning.
+ * Where: Rendered in frontend/src/App.jsx under #/portal/me.
+ */
+.payments-table-wrapper {
+  width: 100%;
+  overflow-x: auto
+}
+
+.payments-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: .5rem
+}
+
+.payments-table th,
+.payments-table td {
+  padding: .5rem;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  white-space: nowrap
+}
+
+.payments-table th {
+  font-weight: 700;
+  background: #fafafa
+}
+
+.payments-table .num {
+  text-align: right
+}
+
+@media (max-width:800px) {
+  .account-profile {
+    grid-template-columns: 1fr
+  }
+}
+
 .form-actions {
   margin-top: .5rem
 }
@@ -328,6 +396,22 @@ button {
   justify-content: space-between;
   align-items: center;
   margin: .5rem 0
+}
+
+.preview-toggle {
+  width: 100%;
+  display: flex;
+  justify-content: flex-start;
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: -.25rem 0 .5rem;
+  cursor: pointer
+}
+
+.preview-toggle-icon {
+  font-size: 1.5rem;
+  line-height: 1
 }
 
 .link {

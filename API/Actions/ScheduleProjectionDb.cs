@@ -1,3 +1,10 @@
+// A.1 [Db.Schedule.Projection] ScheduleProjectionDb (DB → minute-grid projection).
+// What: Reads EventEntity rows from SQLite and "paints" them into the shared schedule model (Days → Hours → Minutes[60]).
+// Why: Keeps a single schedule shape for the whole app where "not booked" means default music (filler).
+// Where:
+// - Called by /db/schedule/* endpoints (API/Endpoints/ScheduleDbEndpoints.cs).
+// - Consumed by the React UI (frontend/src/App.jsx) via loadToday/loadWeek.
+//
 // --- FILE: Actions/ScheduleProjectionDb.cs
 // A.3b Minute-grid painting from the database into the 7-day ScheduleData model.
 // - Beginner view: transform EventEntity rows from the DB into the 7‑day grid model used by the UI.

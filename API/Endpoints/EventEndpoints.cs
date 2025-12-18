@@ -1,3 +1,10 @@
+// A.1 [Legacy.Event] Legacy in-memory event endpoints ("doors") under /schedule/event.
+// What: Creates/reschedules/deletes bookings in RAM (ScheduleData + EventActions) instead of SQLite.
+// Why: Teaching sandbox for learning routing/model binding without touching the DB-backed production lane.
+// Where:
+// - Mapped in Program.cs via app.MapEventEndpoints().
+// - Used by the API's demo pages in API/wwwroot (and Swagger).
+//
 // --- FILE: EventEndpoints.cs ---
 // A.5b Legacy in-memory "whiteboard" event endpoints under /schedule/event.
 // - Mirrors the DB-backed /db/event endpoints, but stores bookings only in memory (ScheduleData + EventActions [A.5c]).

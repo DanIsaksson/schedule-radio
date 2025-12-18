@@ -33,5 +33,13 @@ namespace API.Models
         public string? EventType { get; set; } // "PreRecorded" or "Live"
         public int? HostCount { get; set; }
         public bool HasGuest { get; set; }
+
+        // B.8 [Booking.Ownership] The Identity user id that owns this booking (AspNetUsers.Id).
+        // Why: Used for edit/delete permissions and for monthly payment calculation (Events.ResponsibleUserId -> ContributorPayments).
+        // Where:
+        // - Set on create by POST /db/event/post (Endpoints/EventDbEndpoints.cs).
+        // - Queried during payroll by POST /api/admin/payments/calculate-previous-month (Endpoints/AdminPaymentsEndpoints.cs).
+        // Invariant: New bookings should always have an owner; legacy rows may be backfilled in Program.cs at startup.
+        public string? ResponsibleUserId { get; set; }
     }
 }

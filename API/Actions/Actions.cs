@@ -9,6 +9,9 @@
 // - Uses the same 7-day × 24 × 60 minute grid as the DB-backed flow (Program.cs A.3, Models A.3a),
 //   but updates it directly instead of persisting bookings to the Events table.
 // - The real React UI and production flows use the /db/* endpoints and EventActionsDb/B.15* instead.
+// Where:
+// - Used by legacy in-memory endpoints in API/Endpoints/ScheduleEndpoints.cs and API/Endpoints/EventEndpoints.cs.
+// - Not used by the staff portal booking + payment flows (those use /db/* + /api/*).
 
 using System;
 using System.Collections.Generic;

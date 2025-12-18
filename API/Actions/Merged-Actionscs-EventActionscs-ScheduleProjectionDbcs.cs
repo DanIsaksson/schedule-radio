@@ -1,3 +1,7 @@
+// A.1 [Teaching.Artifact] Merged reference file (not compiled).
+// What: A copy/merge of multiple source files (Actions/EventActionsDb/ScheduleProjectionDb) kept as a single reading artifact.
+// Why: Helps teaching by reducing file-hopping, but would duplicate types if compiled.
+// Where: Excluded from build via `#if false`; use the real files in API/Actions/* instead.
 //#if false wrapper: this merged teaching file is excluded from compilation to avoid duplicate type definitions.
 #if false
 // --- FILE: Actions/Actions.cs ---

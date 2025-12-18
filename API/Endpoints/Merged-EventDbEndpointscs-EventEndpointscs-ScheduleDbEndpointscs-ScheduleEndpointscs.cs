@@ -1,3 +1,7 @@
+// A.1 [Teaching.Artifact] Merged reference file (not compiled).
+// What: A copy/merge of multiple endpoint files kept as a single reading artifact.
+// Why: Helps teaching by reducing file-hopping, but would duplicate endpoint classes if compiled.
+// Where: Excluded from build via `#if false`; use the real files in API/Endpoints/* instead.
 //#if false wrapper: this merged teaching file is excluded from compilation to avoid duplicate type definitions.
 #if false
 // --- FILE: Endpoints/EventDbEndpoints.cs ---

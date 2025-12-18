@@ -1,3 +1,7 @@
+// A.1 [Teaching.Artifact] Merged reference file (not compiled).
+// What: A copy/merge of model files kept as a single reading artifact.
+// Why: Helps teaching by reducing file-hopping, but would duplicate types if compiled.
+// Where: Excluded from build via `#if false`; use the real files in API/Models/* instead.
 //#if false wrapper: this merged teaching models file is excluded from compilation to avoid duplicate type definitions.
 #if false
 // [Db.Schema.4] Event Entity

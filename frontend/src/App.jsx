@@ -10,6 +10,7 @@
 // - useState = the component's **memory** about changing data (today, week, form fields, errors).
 // - useEffect = doing things with the **Outside World** (HTTP calls to the backend) after React draws the UI.
 import React, { useEffect, useState } from 'react'
+import { useAuth } from './auth/AuthContext.jsx'
 
 /**
  * A.2 HourRow Component
@@ -260,6 +261,35 @@ function SiteHeader() {
   )
 }
 
+function StaffHeader({ user, onLogout }) {
+  return (
+    <header className="site-header">
+      <div className="brand">Radio<span className="accent">Portal</span></div>
+      <nav className="nav">
+        <a href="#/">Hem</a>
+        {user ? (
+          <>
+            <a href="#/bookings">Bokningar</a>
+            <a href="#/portal/me">Konto</a>
+            <a href="#/portal/change-password">Byt lösenord</a>
+            <a
+              href="#/"
+              onClick={(e) => {
+                e.preventDefault()
+                onLogout?.()
+              }}
+            >
+              Logga ut
+            </a>
+          </>
+        ) : (
+          <a href="#/portal">Logga in</a>
+        )}
+      </nav>
+    </header>
+  )
+}
+
 /**
  * SiteFooter Component
  * 
@@ -325,21 +355,25 @@ function FeaturedRow() {
  */
 function SchedulePreview({ week }) {
   // Local state for collapsing the preview
-  const [showWeek, setShowWeek] = useState(false)
+  const [showWeek, setShowWeek] = useState(true)
 
   return (
     <section className="schedule-preview container-wide">
       <div
         className="preview-header collapsible-header"
-        onClick={() => setShowWeek(!showWeek)}
-        style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
       >
         <h2>Sänds denna vecka</h2>
-        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-          <a href="#/schedule" className="link" onClick={e => e.stopPropagation()}>Hela tablån →</a>
-          <span style={{ fontSize: '1.5rem' }}>{showWeek ? '−' : '+'}</span>
-        </div>
+        <a href="#/schedule" className="link">Hela tablån →</a>
       </div>
+
+      <button
+        type="button"
+        className="preview-toggle"
+        onClick={() => setShowWeek(v => !v)}
+        aria-expanded={showWeek}
+      >
+        <span className="preview-toggle-icon" aria-hidden="true">{showWeek ? '−' : '+'}</span>
+      </button>
 
       {showWeek && (
         <>
@@ -525,6 +559,9 @@ function AdminPanel({ week, today, form, onPickHour, onMinuteClick, onChange, su
  * - route: The current URL hash ("#/", "#/schedule", "#/admin"), passed from Router in main.jsx.
  */
 export default function App({ route = '#/' }) {
+  const { user, roles, mustChangePassword, isLoading: authLoading, refreshMe, login, logout } = useAuth()
+  const isLoggedIn = Boolean(user)
+
   // B.8 State definitions (the component's "memory").
   // - today: one DaySchedule for the Admin "Today" list (built from /db/schedule/today).
   // - week: full 7-day schedule window for grids and previews (from /db/schedule/7days).
@@ -535,6 +572,27 @@ export default function App({ route = '#/' }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
+
+  const [portalEmail, setPortalEmail] = useState('')
+  const [portalPassword, setPortalPassword] = useState('')
+  const [portalError, setPortalError] = useState('')
+  const [portalIsSubmitting, setPortalIsSubmitting] = useState(false)
+
+  const [oldPassword, setOldPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [changePasswordError, setChangePasswordError] = useState('')
+  const [changePasswordSuccessMessage, setChangePasswordSuccessMessage] = useState('')
+  const [isChangingPassword, setIsChangingPassword] = useState(false)
+
+  // B.9 [Portal.Me] Payment history state (the contributor "payment ledger" view).
+  // What: Stores the rows returned by GET /api/contributor/payments (one row per month).
+  // Why: Payment rows are persisted in the backend (ContributorPayments table) and the contributor needs a read-only overview.
+  // Where:
+  // - Loaded by loadPayments() [B.12d] in this file.
+  // - Rendered in the "Konto" page (route #/portal/me) near the bottom of this file.
+  const [payments, setPayments] = useState([])
+  const [paymentsLoading, setPaymentsLoading] = useState(false)
+  const [paymentsError, setPaymentsError] = useState('')
 
   // B.30 [Root] Form state: booking request we will send to the backend.
   // - Mirrors the parameters of the /db/event/post endpoint [B.15a/B.15b]:
@@ -631,6 +689,113 @@ export default function App({ route = '#/' }) {
     }
   }
 
+  // B.12c [Portal.Me] Normalize payment rows from the backend (shape + casing).
+  // What: Converts the API response into a consistent camelCase object for React rendering.
+  // Why: ASP.NET may serialize properties as PascalCase (e.g. PeriodYear) while JS code typically uses camelCase.
+  // Where: Used by loadPayments() [B.12d] when parsing GET /api/contributor/payments.
+  const normalizePaymentRow = (row) => ({
+    id: row.id ?? row.Id ?? null,
+    periodYear: row.periodYear ?? row.PeriodYear ?? 0,
+    periodMonth: row.periodMonth ?? row.PeriodMonth ?? 0,
+    totalMinutes: row.totalMinutes ?? row.TotalMinutes ?? 0,
+    eventCount: row.eventCount ?? row.EventCount ?? 0,
+    baseAmount: row.baseAmount ?? row.BaseAmount ?? 0,
+    eventBonusAmount: row.eventBonusAmount ?? row.EventBonusAmount ?? 0,
+    vatAmount: row.vatAmount ?? row.VatAmount ?? 0,
+    totalIncludingVat: row.totalIncludingVat ?? row.TotalIncludingVat ?? 0
+  })
+
+  // C.18 [Portal.Me] Presentation helpers for the payment history table.
+  // What: Format raw values (year/month, minutes, money) into strings that are easy to scan.
+  // Why: Keeps JSX clean so the "table view" stays focused on layout, not string math.
+  // Where: Used inside the payment table rendering in the #/portal/me section.
+  const formatYearMonth = (year, month) => {
+    if (!year || !month) {
+      return ''
+    }
+
+    return `${year}-${String(month).padStart(2, '0')}`
+  }
+
+  const formatDurationMinutes = (totalMinutes) => {
+    const minutes = Number(totalMinutes) || 0
+    const hours = Math.floor(minutes / 60)
+    const remainder = minutes % 60
+
+    if (hours <= 0) {
+      return `${remainder} min`
+    }
+
+    if (remainder <= 0) {
+      return `${hours} h`
+    }
+
+    return `${hours} h ${remainder} min`
+  }
+
+  const formatSek = (amount) => {
+    const value = Number(amount) || 0
+    return value.toLocaleString('sv-SE', { style: 'currency', currency: 'SEK' })
+  }
+
+  // B.12d [Portal.Me] Load payment history for the currently logged-in contributor.
+  // What: Calls GET /api/contributor/payments and stores the result in `payments`.
+  // Why: The backend calculates monthly payment summaries and persists them in SQLite; this page just reads and displays.
+  // Where:
+  // - API "door": API/Endpoints/ContributorEndpoints.cs (MapGet("/payments")).
+  // - Trigger: useEffect [B.14c] when you navigate to #/portal/me (and auth is OK).
+  // Failure modes:
+  // - 401 => session expired -> refreshMe() clears auth -> redirect to #/portal.
+  // - 403 => often must-change-password gate -> refreshMe() and redirect to #/portal/change-password.
+  const loadPayments = async () => {
+    setPaymentsLoading(true)
+    setPaymentsError('')
+
+    try {
+      const res = await fetch('/api/contributor/payments', {
+        credentials: 'include'
+      })
+
+      if (res.status === 401) {
+        setPayments([])
+        await refreshMe().catch(() => {})
+        window.location.hash = '#/portal'
+        return
+      }
+
+      if (res.status === 403) {
+        setPayments([])
+        const text = await res.text()
+
+        const me = await refreshMe().catch(() => null)
+        if (!me) {
+          window.location.hash = '#/portal'
+          return
+        }
+
+        if (me.mustChangePassword) {
+          window.location.hash = '#/portal/change-password'
+        }
+
+        setPaymentsError(text || 'Du saknar behörighet.')
+        return
+      }
+
+      if (!res.ok) {
+        const text = await res.text()
+        throw new Error(text || `HTTP ${res.status}`)
+      }
+
+      const data = await res.json()
+      const rows = Array.isArray(data) ? data : []
+      setPayments(rows.map(normalizePaymentRow))
+    } catch (e2) {
+      setPaymentsError(e2.message || String(e2))
+    } finally {
+      setPaymentsLoading(false)
+    }
+  }
+
   // B.13 Initial data load effect.
   // - Runs once when App is first created (like a constructor), because dependency array is [].
   // - Kicks off both schedule-loading flows so the UI can show Today + Week without a manual refresh.
@@ -639,6 +804,62 @@ export default function App({ route = '#/' }) {
     loadToday();
     loadWeek()
   }, [])
+
+  useEffect(() => {
+    if (route.startsWith('#/admin')) {
+      window.location.hash = '#/bookings'
+    }
+  }, [route])
+
+  useEffect(() => {
+    if (authLoading) {
+      return
+    }
+
+    const isPortalChangePassword = route.startsWith('#/portal/change-password')
+    const isProtectedStaffRoute =
+      route.startsWith('#/bookings') ||
+      route.startsWith('#/admin') ||
+      route.startsWith('#/portal/me') ||
+      route.startsWith('#/portal/change-password')
+
+    if (isLoggedIn && mustChangePassword && !isPortalChangePassword) {
+      window.location.hash = '#/portal/change-password'
+      return
+    }
+
+    if (!isLoggedIn && isProtectedStaffRoute) {
+      window.location.hash = '#/portal'
+      return
+    }
+
+    if (isLoggedIn && !mustChangePassword && route === '#/portal') {
+      window.location.hash = '#/bookings'
+    }
+  }, [route, authLoading, isLoggedIn, mustChangePassword])
+
+  // B.14c [Portal.Me] Side effect: auto-load payments when entering the contributor account page.
+  // Why: Payments are "outside world" data (network) and should load automatically once the user is allowed past route guards.
+  // Where: This effect runs when `route` or auth flags change; it calls loadPayments() [B.12d].
+  useEffect(() => {
+    if (authLoading) {
+      return
+    }
+
+    if (!route.startsWith('#/portal/me')) {
+      return
+    }
+
+    if (!isLoggedIn) {
+      return
+    }
+
+    if (mustChangePassword) {
+      return
+    }
+
+    loadPayments()
+  }, [route, authLoading, isLoggedIn, mustChangePassword])
 
   // B.30a Handler: updates the booking form state when the user types (controlled inputs lane).
   // - Keeps the <input> values in sync with our React memory so the form UI always reflects `form`.
@@ -678,7 +899,26 @@ export default function App({ route = '#/' }) {
       }).toString()
 
       // C.17 POST request: send the booking to /db/event/post.
-      const res = await fetch(`/db/event/post?${queryString}`, { method: 'POST' })
+      const res = await fetch(`/db/event/post?${queryString}`, {
+        method: 'POST',
+        credentials: 'include'
+      })
+
+      if (res.status === 401) {
+        window.location.hash = '#/portal'
+        throw new Error('Du måste logga in för att boka.')
+      }
+
+      if (res.status === 403) {
+        if (mustChangePassword) {
+          window.location.hash = '#/portal/change-password'
+          throw new Error('Du måste byta lösenord innan du kan boka.')
+        }
+
+        const text = await res.text()
+        throw new Error(text || 'Du saknar behörighet för att boka.')
+      }
+
       if (!res.ok) {
         const text = await res.text()
         throw new Error(text || `HTTP ${res.status}`)
@@ -697,15 +937,112 @@ export default function App({ route = '#/' }) {
     }
   }
 
+  const handlePortalLoginSubmit = async (e) => {
+    e.preventDefault()
+    setPortalError('')
+    setPortalIsSubmitting(true)
+
+    try {
+      const me = await login(portalEmail, portalPassword)
+      setPortalPassword('')
+
+      if (!me) {
+        window.location.hash = '#/portal'
+        return
+      }
+
+      window.location.hash = me.mustChangePassword ? '#/portal/change-password' : '#/bookings'
+    } catch (e2) {
+      setPortalError(e2.message || String(e2))
+    } finally {
+      setPortalIsSubmitting(false)
+    }
+  }
+
+  const handleChangePasswordSubmit = async (e) => {
+    e.preventDefault()
+    setChangePasswordError('')
+    setChangePasswordSuccessMessage('')
+    setIsChangingPassword(true)
+
+    try {
+      const res = await fetch('/api/auth/change-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          OldPassword: oldPassword,
+          NewPassword: newPassword
+        }),
+        credentials: 'include'
+      })
+
+      if (res.status === 401) {
+        window.location.hash = '#/portal'
+        throw new Error('Du måste logga in.')
+      }
+
+      if (!res.ok) {
+        const text = await res.text()
+        throw new Error(text || `HTTP ${res.status}`)
+      }
+
+      setChangePasswordSuccessMessage('Lösenordet är uppdaterat.')
+      setOldPassword('')
+      setNewPassword('')
+
+      const me = await refreshMe()
+      if (!me) {
+        window.location.hash = '#/portal'
+        return
+      }
+
+      window.location.hash = me.mustChangePassword ? '#/portal/change-password' : '#/bookings'
+    } catch (e2) {
+      setChangePasswordError(e2.message || String(e2))
+    } finally {
+      setIsChangingPassword(false)
+    }
+  }
+
+  const handleLogout = async () => {
+    setPortalError('')
+
+    try {
+      await logout()
+
+      // B.21 [Portal.Me] Cleanup on logout.
+      // Why: Payment rows are user-specific; clearing avoids "flash" of the previous user's data if someone logs in next.
+      // Where: The navigation link lives in StaffHeader (top of this file) and calls this handler.
+      setPayments([])
+      setPaymentsError('')
+      setPaymentsLoading(false)
+      window.location.hash = '#/portal'
+    } catch (e2) {
+      const message = e2.message || String(e2)
+      setPortalError(message)
+      setError(message)
+    }
+  }
+
   // B.5c Derived state: decide which "page" to show based on the current route (navigation lane).
   // - Mirrors the Router flow in main.jsx [B.5/B.5b] (codemap: Hash Navigation Setup and Route Management).
   const isHome = route === '#/'
   const isSchedule = route.startsWith('#/schedule')
-  const isAdmin = route.startsWith('#/admin')
+  const isPortalLogin = route === '#/portal'
+  const isPortalMe = route.startsWith('#/portal/me')
+  const isPortalChangePasswordRoute = route.startsWith('#/portal/change-password')
+  const isBookings = route.startsWith('#/bookings') || route.startsWith('#/admin')
+  const isStaffRoute = route.startsWith('#/portal') || isBookings
 
   return (
     <div className="container">
-      <SiteHeader />
+      {isStaffRoute ? (
+        <StaffHeader user={user} onLogout={handleLogout} />
+      ) : (
+        <SiteHeader />
+      )}
 
       {/* Conditional Rendering: Only show if isHome is true */}
       {isHome && (
@@ -730,7 +1067,208 @@ export default function App({ route = '#/' }) {
         </>
       )}
 
-      {isAdmin && (
+      {isPortalLogin && (
+        <section className="grid">
+          <div className="card" style={{ gridColumn: '1 / -1' }}>
+            <header><h1>Personalportal</h1></header>
+
+            {portalError && <div className="alert error">Fel: {portalError}</div>}
+
+            <form onSubmit={handlePortalLoginSubmit} className="form">
+              <label>
+                E-post
+                <input
+                  type="email"
+                  value={portalEmail}
+                  onChange={(e) => setPortalEmail(e.target.value)}
+                  autoComplete="username"
+                  required
+                />
+              </label>
+              <label>
+                Lösenord
+                <input
+                  type="password"
+                  value={portalPassword}
+                  onChange={(e) => setPortalPassword(e.target.value)}
+                  autoComplete="current-password"
+                  required
+                />
+              </label>
+              <div className="form-actions">
+                <button type="submit" disabled={portalIsSubmitting}>
+                  {portalIsSubmitting ? 'Loggar in…' : 'Logga in'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </section>
+      )}
+
+      {isPortalMe && (
+        <section className="grid">
+          <div className="card" style={{ gridColumn: '1 / -1' }}>
+            <header><h1>Konto</h1></header>
+
+            {authLoading && <p>Laddar…</p>}
+
+            {!authLoading && !isLoggedIn && (
+              <div className="alert error">Du är inte inloggad.</div>
+            )}
+
+            {!authLoading && isLoggedIn && (
+              <>
+                <div className={`account-profile ${user?.photoUrl ? '' : 'no-photo'}`.trim()}>
+                  {user?.photoUrl && (
+                    <div className="account-photo">
+                      <img src={user.photoUrl} alt="Profilbild" />
+                    </div>
+                  )}
+
+                  <div className="account-details">
+                    <p><strong>E-post:</strong> {user?.email ?? ''}</p>
+                    <p><strong>Telefon:</strong> {user?.phone ? user.phone : '-'}</p>
+                    <p><strong>Adress:</strong> {user?.address ? user.address : '-'}</p>
+                    <p><strong>Bio:</strong> {user?.bio ? user.bio : '-'}</p>
+                    <p><strong>Roll:</strong> {(roles ?? []).join(', ')}</p>
+                    <p><strong>Måste byta lösenord:</strong> {mustChangePassword ? 'Ja' : 'Nej'}</p>
+                  </div>
+                </div>
+
+                <div className="form-actions">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      refreshMe().catch(() => {})
+                      loadPayments().catch(() => {})
+                    }}
+                    disabled={paymentsLoading}
+                  >
+                    Uppdatera
+                  </button>
+                </div>
+
+                <h2>Betalningshistorik</h2>
+
+                {paymentsLoading && <p>Laddar betalningar…</p>}
+
+                {paymentsError && <div className="alert error">Fel: {paymentsError}</div>}
+
+                {!paymentsLoading && !paymentsError && payments.length === 0 && (
+                  <p>Inga betalningar ännu.</p>
+                )}
+
+                {!paymentsLoading && payments.length > 0 && (
+                  <div className="payments-table-wrapper">
+                    <table className="payments-table">
+                      <thead>
+                        <tr>
+                          <th>Period</th>
+                          <th>Tid</th>
+                          <th className="num">Event</th>
+                          <th className="num">Bas</th>
+                          <th className="num">Bonus</th>
+                          <th className="num">Moms</th>
+                          <th className="num">Totalt</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {payments
+                          .slice()
+                          .sort(
+                            (a, b) =>
+                              (Number(b.periodYear) - Number(a.periodYear)) ||
+                              (Number(b.periodMonth) - Number(a.periodMonth))
+                          )
+                          .map((p) => (
+                            <tr key={p.id ?? `${p.periodYear}-${p.periodMonth}`}>
+                              <td>{formatYearMonth(p.periodYear, p.periodMonth)}</td>
+                              <td>{formatDurationMinutes(p.totalMinutes)}</td>
+                              <td className="num">{p.eventCount}</td>
+                              <td className="num">{formatSek(p.baseAmount)}</td>
+                              <td className="num">{formatSek(p.eventBonusAmount)}</td>
+                              <td className="num">{formatSek(p.vatAmount)}</td>
+                              <td className="num">{formatSek(p.totalIncludingVat)}</td>
+                            </tr>
+                          ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </section>
+      )}
+
+      {isPortalChangePasswordRoute && (
+        <section className="grid">
+          <div className="card" style={{ gridColumn: '1 / -1' }}>
+            <header><h1>Byt lösenord</h1></header>
+
+            {mustChangePassword && (
+              <div className="alert error">Du måste byta lösenord innan du kan fortsätta.</div>
+            )}
+
+            {changePasswordError && <div className="alert error">Fel: {changePasswordError}</div>}
+            {changePasswordSuccessMessage && <div className="alert ok">{changePasswordSuccessMessage}</div>}
+
+            <form onSubmit={handleChangePasswordSubmit} className="form">
+              <label>
+                Nuvarande lösenord
+                <input
+                  type="password"
+                  value={oldPassword}
+                  onChange={(e) => setOldPassword(e.target.value)}
+                  autoComplete="current-password"
+                  required
+                />
+              </label>
+              <label>
+                Nytt lösenord
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  autoComplete="new-password"
+                  required
+                />
+              </label>
+              <div className="form-actions">
+                <button type="submit" disabled={isChangingPassword}>
+                  {isChangingPassword ? 'Sparar…' : 'Spara'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </section>
+      )}
+
+      {isBookings && authLoading && (
+        <section className="grid">
+          <div className="card" style={{ gridColumn: '1 / -1' }}>
+            <p>Laddar…</p>
+          </div>
+        </section>
+      )}
+
+      {isBookings && !authLoading && !isLoggedIn && (
+        <section className="grid">
+          <div className="card" style={{ gridColumn: '1 / -1' }}>
+            <p>Du måste logga in.</p>
+          </div>
+        </section>
+      )}
+
+      {isBookings && !authLoading && isLoggedIn && mustChangePassword && (
+        <section className="grid">
+          <div className="card" style={{ gridColumn: '1 / -1' }}>
+            <p>Du måste byta lösenord.</p>
+          </div>
+        </section>
+      )}
+
+      {isBookings && !authLoading && isLoggedIn && !mustChangePassword && (
         <AdminPanel
           week={week}
           today={today}

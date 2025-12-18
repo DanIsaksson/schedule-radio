@@ -1,3 +1,10 @@
+// A.1 [Db.Event.Actions] DB booking rules (business logic layer).
+// What: Core create/reschedule/delete/list operations for EventEntity rows.
+// Why: Keeps endpoint "doors" thin by centralizing validation + overlap rules in one place.
+// Where:
+// - Called by API/Endpoints/EventDbEndpoints.cs.
+// - Writes to the Events table via SchedulerContext (SQLite).
+//
 // --- FILE: Actions/EventActionsDb.cs
 // Beginner view: "guard" logic behind the /db/event doors (see Endpoints/EventDbEndpoints.cs).
 // - Each public method is one booking action: create, delete, reschedule, list.
@@ -19,13 +26,16 @@ namespace API.Actions
         // B.15b CreateEvent: core booking logic behind POST /db/event/post [B.15a].
         // - Called from the React admin submit handler App.jsx submitBooking [B.15] via EventDbEndpoints.
         // - Returns the new Id on success; -1 if validation or overlap checks fail.
-        public static int CreateEvent(SchedulerContext db, DateTime date, int hour, int startMinute, int endMinute, string? title, string? eventType, int? hostCount, bool hasGuest)
+        public static int CreateEvent(SchedulerContext db, DateTime date, int hour, int startMinute, int endMinute, string? title, string? eventType, int? hostCount, bool hasGuest, string responsibleUserId)
         {
             // 1) Validate input (keep it simple):
             //    - hour must be 0..23; minutes 0..59; end > start.
             if (hour < 0 || hour > 23) return -1;
             if (startMinute < 0 || startMinute > 59) return -1;
             if (endMinute <= startMinute || endMinute > 60) return -1;
+
+            // Invariant: Every booking must have an owner so we can enforce permissions and calculate contributor payments.
+            if (string.IsNullOrWhiteSpace(responsibleUserId)) return -1;
             
             // 2) Query existing bookings for the same date and hour:
             var day = date.Date;
@@ -56,7 +66,8 @@ namespace API.Actions
                 Title = title,
                 EventType = eventType,
                 HostCount = hostCount,
-                HasGuest = hasGuest
+                HasGuest = hasGuest,
+                ResponsibleUserId = responsibleUserId
             };
             db.Events.Add(entity);
             db.SaveChanges();
