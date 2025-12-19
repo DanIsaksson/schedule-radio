@@ -49,7 +49,7 @@ public static class ContributorEndpoints
                 Phone: user.PhoneNumber,
                 Address: user.Address,
                 Bio: user.Bio,
-                PhotoUrl: user.PhotoUrl,
+                PhotoUrl: NormalizePhotoUrl(user.PhotoUrl),
                 MustChangePassword: user.MustChangePassword,
                 Roles: roles.ToArray()));
         });
@@ -114,6 +114,45 @@ public static class ContributorEndpoints
 
             return await next(context);
         }
+    }
+
+    private static string? NormalizePhotoUrl(string? photoUrl)
+    {
+        if (string.IsNullOrWhiteSpace(photoUrl))
+        {
+            return null;
+        }
+
+        string trimmed = photoUrl.Trim();
+
+        if (trimmed.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
+            || trimmed.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+        {
+            return trimmed;
+        }
+
+        if (trimmed.StartsWith("/images/", StringComparison.OrdinalIgnoreCase))
+        {
+            return trimmed;
+        }
+
+        if (trimmed.StartsWith("images/", StringComparison.OrdinalIgnoreCase))
+        {
+            return "/" + trimmed;
+        }
+
+        if (trimmed.Contains('\\'))
+        {
+            string fileName = Path.GetFileName(trimmed);
+            return string.IsNullOrWhiteSpace(fileName) ? null : $"/images/Contributors/{fileName}";
+        }
+
+        if (!trimmed.Contains('/'))
+        {
+            return $"/images/Contributors/{trimmed}";
+        }
+
+        return trimmed.StartsWith('/') ? trimmed : "/" + trimmed;
     }
 }
 

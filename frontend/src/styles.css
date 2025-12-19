@@ -266,6 +266,53 @@ button {
   margin-top: .5rem
 }
 
+.admin-user-actions {
+  display: flex;
+  gap: .5rem;
+  flex-wrap: wrap;
+  margin-top: .75rem;
+  margin-bottom: .75rem;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: .5rem;
+}
+
+.admin-user-list {
+  display: grid;
+  gap: .5rem;
+}
+
+.admin-user-row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  gap: .15rem;
+  padding: .6rem .75rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #fafafa;
+  cursor: pointer;
+}
+
+.admin-user-row:hover {
+  border-color: var(--accent);
+}
+
+.admin-user-row.active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(255, 106, 0, 0.15);
+  background: #fff7f0;
+}
+
+.admin-user-email {
+  font-weight: 700;
+}
+
+.admin-user-meta {
+  color: var(--muted);
+  font-size: .95rem;
+}
+
 .alert {
   margin: .5rem 0;
   padding: .5rem .75rem;
