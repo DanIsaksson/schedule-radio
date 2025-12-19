@@ -61,6 +61,396 @@ function MinuteMatrix({ hour, minutes, onMinuteClick, selection }) {
   )
 }
 
+function AdminUsersPanel() {
+  const [adminUsers, setAdminUsers] = useState([])
+  const [adminUsersLoading, setAdminUsersLoading] = useState(false)
+  const [adminUsersError, setAdminUsersError] = useState('')
+  const [adminUsersSuccessMessage, setAdminUsersSuccessMessage] = useState('')
+  const [adminUsersTemporaryPassword, setAdminUsersTemporaryPassword] = useState('')
+
+  const [selectedAdminUserId, setSelectedAdminUserId] = useState(null)
+  const [adminUserForm, setAdminUserForm] = useState({
+    email: '',
+    role: 'Contributor',
+    address: '',
+    phone: '',
+    bio: '',
+    photoUrl: ''
+  })
+
+  const normalizeAdminUserListItem = (data) => {
+    const roles = data.roles ?? data.Roles ?? []
+
+    return {
+      userId: data.userId ?? data.UserId ?? '',
+      email: data.email ?? data.Email ?? '',
+      phone: data.phone ?? data.Phone ?? '',
+      address: data.address ?? data.Address ?? '',
+      bio: data.bio ?? data.Bio ?? '',
+      photoUrl: data.photoUrl ?? data.PhotoUrl ?? '',
+      mustChangePassword: Boolean(data.mustChangePassword ?? data.MustChangePassword),
+      roles: Array.isArray(roles) ? roles : []
+    }
+  }
+
+  const normalizePhotoUrlInput = (value) => {
+    if (!value) return ''
+
+    const trimmed = String(value).trim()
+    if (!trimmed) return ''
+
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+      return trimmed
+    }
+
+    if (trimmed.startsWith('/images/')) {
+      return trimmed
+    }
+
+    if (trimmed.startsWith('images/')) {
+      return `/${trimmed}`
+    }
+
+    if (trimmed.includes('\\')) {
+      const fileName = trimmed.split('\\').pop()
+      return fileName ? `/images/Contributors/${fileName}` : ''
+    }
+
+    if (!trimmed.includes('/')) {
+      return `/images/Contributors/${trimmed}`
+    }
+
+    return trimmed.startsWith('/') ? trimmed : `/${trimmed}`
+  }
+
+  const readErrorMessage = async (res) => {
+    const text = await res.text()
+    if (!text) return `HTTP ${res.status}`
+
+    try {
+      const data = JSON.parse(text)
+      if (data && Array.isArray(data.Errors)) {
+        return data.Errors.join(', ')
+      }
+    } catch {
+    }
+
+    return text
+  }
+
+  const startCreate = () => {
+    setSelectedAdminUserId(null)
+    setAdminUsersTemporaryPassword('')
+    setAdminUsersSuccessMessage('')
+    setAdminUsersError('')
+    setAdminUserForm({
+      email: '',
+      role: 'Contributor',
+      address: '',
+      phone: '',
+      bio: '',
+      photoUrl: ''
+    })
+  }
+
+  const selectUser = (user) => {
+    setSelectedAdminUserId(user.userId)
+    setAdminUsersError('')
+
+    const role = (user.roles ?? []).includes('Admin') ? 'Admin' : 'Contributor'
+
+    setAdminUserForm({
+      email: user.email ?? '',
+      role,
+      address: user.address ?? '',
+      phone: user.phone ?? '',
+      bio: user.bio ?? '',
+      photoUrl: user.photoUrl ?? ''
+    })
+  }
+
+  const loadUsers = async (options = {}) => {
+    const keepSelection = Boolean(options.keepSelection)
+
+    setAdminUsersLoading(true)
+    setAdminUsersError('')
+
+    try {
+      const res = await fetch('/api/admin/users', {
+        credentials: 'include'
+      })
+
+      if (!res.ok) {
+        throw new Error(await readErrorMessage(res))
+      }
+
+      const data = await res.json()
+      const normalized = Array.isArray(data) ? data.map(normalizeAdminUserListItem) : []
+      setAdminUsers(normalized)
+
+      if (keepSelection && selectedAdminUserId) {
+        const stillExists = normalized.some(u => u.userId === selectedAdminUserId)
+        if (!stillExists) {
+          startCreate()
+        }
+      }
+
+      return normalized
+    } catch (e) {
+      setAdminUsersError(e.message || String(e))
+
+      return []
+    } finally {
+      setAdminUsersLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    loadUsers().catch(() => {})
+  }, [])
+
+  const handleFieldChange = (e) => {
+    const { name, value } = e.target
+    setAdminUserForm(prev => ({ ...prev, [name]: value }))
+  }
+
+  const handlePhotoUrlBlur = () => {
+    setAdminUserForm(prev => ({ ...prev, photoUrl: normalizePhotoUrlInput(prev.photoUrl) }))
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+
+    setAdminUsersLoading(true)
+    setAdminUsersError('')
+    setAdminUsersSuccessMessage('')
+    setAdminUsersTemporaryPassword('')
+
+    const payloadPhotoUrl = normalizePhotoUrlInput(adminUserForm.photoUrl)
+    const payloadBio = adminUserForm.bio?.trim() ? adminUserForm.bio.trim() : null
+
+    try {
+      if (!selectedAdminUserId) {
+        const res = await fetch('/api/admin/users', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include',
+          body: JSON.stringify({
+            email: adminUserForm.email?.trim() ?? '',
+            role: adminUserForm.role,
+            address: adminUserForm.address?.trim() ?? '',
+            phone: adminUserForm.phone?.trim() ?? '',
+            bio: payloadBio,
+            photoUrl: payloadPhotoUrl ? payloadPhotoUrl : null
+          })
+        })
+
+        if (!res.ok) {
+          throw new Error(await readErrorMessage(res))
+        }
+
+        const created = await res.json()
+        const createdUserId = created.userId ?? created.UserId ?? ''
+        const tempPassword = created.temporaryPassword ?? created.TemporaryPassword ?? ''
+        setAdminUsersTemporaryPassword(tempPassword)
+        setAdminUsersSuccessMessage('Kontot skapades.')
+
+        const latestUsers = await loadUsers()
+        const createdUser = latestUsers.find(u => u.userId === createdUserId)
+        if (createdUser) {
+          selectUser(createdUser)
+        } else if (createdUserId) {
+          setSelectedAdminUserId(createdUserId)
+        }
+      } else {
+        const res = await fetch(`/api/admin/users/${encodeURIComponent(selectedAdminUserId)}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include',
+          body: JSON.stringify({
+            role: adminUserForm.role,
+            address: adminUserForm.address?.trim() ?? '',
+            phone: adminUserForm.phone?.trim() ?? '',
+            bio: payloadBio,
+            photoUrl: payloadPhotoUrl ? payloadPhotoUrl : null
+          })
+        })
+
+        if (!res.ok) {
+          throw new Error(await readErrorMessage(res))
+        }
+
+        setAdminUsersSuccessMessage('Kontot uppdaterades.')
+        await loadUsers({ keepSelection: true })
+      }
+    } catch (e2) {
+      setAdminUsersError(e2.message || String(e2))
+    } finally {
+      setAdminUsersLoading(false)
+    }
+  }
+
+  const handleDelete = async () => {
+    if (!selectedAdminUserId) return
+
+    const ok = window.confirm('Är du säker på att du vill ta bort användaren?')
+    if (!ok) return
+
+    setAdminUsersLoading(true)
+    setAdminUsersError('')
+    setAdminUsersSuccessMessage('')
+    setAdminUsersTemporaryPassword('')
+
+    try {
+      const res = await fetch(`/api/admin/users/${encodeURIComponent(selectedAdminUserId)}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      })
+
+      if (res.status !== 204) {
+        throw new Error(await readErrorMessage(res))
+      }
+
+      startCreate()
+      setAdminUsersSuccessMessage('Kontot raderades.')
+      await loadUsers()
+    } catch (e) {
+      setAdminUsersError(e.message || String(e))
+    } finally {
+      setAdminUsersLoading(false)
+    }
+  }
+
+  return (
+    <section className="grid">
+      <div className="card">
+        <header><h2>Användare</h2></header>
+
+        {adminUsersError && <div className="alert error">Fel: {adminUsersError}</div>}
+        {adminUsersSuccessMessage && <div className="alert ok">{adminUsersSuccessMessage}</div>}
+        {adminUsersTemporaryPassword && (
+          <div className="alert ok">Tillfälligt lösenord: <strong>{adminUsersTemporaryPassword}</strong></div>
+        )}
+
+        <div className="admin-user-actions form-actions">
+          <button type="button" onClick={startCreate} disabled={adminUsersLoading}>Skapa nytt konto</button>
+          <button type="button" onClick={() => loadUsers({ keepSelection: true })} disabled={adminUsersLoading}>
+            {adminUsersLoading ? 'Laddar…' : 'Uppdatera lista'}
+          </button>
+        </div>
+
+        <div className="admin-user-list">
+          {adminUsers.length === 0 && !adminUsersLoading && (
+            <p>Inga användare hittades.</p>
+          )}
+
+          {adminUsers.map(u => {
+            const roleText = (u.roles ?? []).includes('Admin') ? 'Admin' : 'Contributor'
+            const mustChangeText = u.mustChangePassword ? 'Byt lösenord' : ''
+            return (
+              <button
+                key={u.userId}
+                type="button"
+                className={`admin-user-row ${selectedAdminUserId === u.userId ? 'active' : ''}`}
+                onClick={() => selectUser(u)}
+              >
+                <span className="admin-user-email">{u.email}</span>
+                <span className="admin-user-meta">{roleText}{mustChangeText ? ` · ${mustChangeText}` : ''}</span>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      <div className="card">
+        <header><h2>{selectedAdminUserId ? 'Redigera konto' : 'Skapa konto'}</h2></header>
+
+        <form onSubmit={handleSubmit} className="form">
+          <label>
+            E-post
+            <input
+              type="email"
+              name="email"
+              value={adminUserForm.email}
+              onChange={handleFieldChange}
+              disabled={Boolean(selectedAdminUserId)}
+              required
+            />
+          </label>
+
+          <label>
+            Roll
+            <select name="role" value={adminUserForm.role} onChange={handleFieldChange}>
+              <option value="Contributor">Contributor</option>
+              <option value="Admin">Admin</option>
+            </select>
+          </label>
+
+          <label>
+            Telefon
+            <input
+              type="text"
+              name="phone"
+              value={adminUserForm.phone}
+              onChange={handleFieldChange}
+              required
+            />
+          </label>
+
+          <label>
+            Adress
+            <input
+              type="text"
+              name="address"
+              value={adminUserForm.address}
+              onChange={handleFieldChange}
+              required
+            />
+          </label>
+
+          <label>
+            Bio
+            <textarea
+              name="bio"
+              value={adminUserForm.bio}
+              onChange={handleFieldChange}
+              rows={3}
+            />
+          </label>
+
+          <label>
+            PhotoUrl
+            <input
+              type="text"
+              name="photoUrl"
+              value={adminUserForm.photoUrl}
+              onChange={handleFieldChange}
+              onBlur={handlePhotoUrlBlur}
+              placeholder="t.ex. cobributor1-avatar.jpg"
+            />
+          </label>
+
+          <div className="form-actions">
+            <button type="submit" disabled={adminUsersLoading}>
+              {adminUsersLoading ? 'Sparar…' : (selectedAdminUserId ? 'Spara' : 'Skapa')}
+            </button>
+
+            {selectedAdminUserId && (
+              <button type="button" onClick={handleDelete} disabled={adminUsersLoading}>
+                Ta bort användare
+              </button>
+            )}
+          </div>
+        </form>
+      </div>
+    </section>
+  )
+}
+
 /**
  * A.3 HourCell Component
  * 
@@ -261,7 +651,7 @@ function SiteHeader() {
   )
 }
 
-function StaffHeader({ user, onLogout }) {
+function StaffHeader({ user, roles, onLogout }) {
   return (
     <header className="site-header">
       <div className="brand">Radio<span className="accent">Portal</span></div>
@@ -271,6 +661,9 @@ function StaffHeader({ user, onLogout }) {
           <>
             <a href="#/bookings">Bokningar</a>
             <a href="#/portal/me">Konto</a>
+            {Array.isArray(roles) && roles.includes('Admin') && (
+              <a href="#/portal/admin/users">Hantera konton</a>
+            )}
             <a href="#/portal/change-password">Byt lösenord</a>
             <a
               href="#/"
@@ -1000,7 +1393,8 @@ export default function App({ route = '#/' }) {
       route.startsWith('#/bookings') ||
       route.startsWith('#/admin') ||
       route.startsWith('#/portal/me') ||
-      route.startsWith('#/portal/change-password')
+      route.startsWith('#/portal/change-password') ||
+      route.startsWith('#/portal/admin/users')
 
     if (isLoggedIn && mustChangePassword && !isPortalChangePassword) {
       window.location.hash = '#/portal/change-password'
@@ -1216,6 +1610,7 @@ export default function App({ route = '#/' }) {
   const isSchedule = route.startsWith('#/schedule')
   const isPortalLogin = route === '#/portal'
   const isPortalMe = route.startsWith('#/portal/me')
+  const isPortalAdminUsers = route.startsWith('#/portal/admin/users')
   const isPortalChangePasswordRoute = route.startsWith('#/portal/change-password')
   const isBookings = route.startsWith('#/bookings') || route.startsWith('#/admin')
   const isStaffRoute = route.startsWith('#/portal') || isBookings
@@ -1288,7 +1683,7 @@ export default function App({ route = '#/' }) {
   return (
     <div className="container">
       {isStaffRoute ? (
-        <StaffHeader user={user} onLogout={handleLogout} />
+        <StaffHeader user={user} roles={roles} onLogout={handleLogout} />
       ) : (
         <SiteHeader />
       )}
@@ -1448,6 +1843,48 @@ export default function App({ route = '#/' }) {
             )}
           </div>
         </section>
+      )}
+
+      {isPortalAdminUsers && (
+        <>
+          <header><h1>Hantera konton</h1></header>
+
+          {authLoading && (
+            <section className="grid">
+              <div className="card" style={{ gridColumn: '1 / -1' }}>
+                <p>Laddar…</p>
+              </div>
+            </section>
+          )}
+
+          {!authLoading && !isLoggedIn && (
+            <section className="grid">
+              <div className="card" style={{ gridColumn: '1 / -1' }}>
+                <div className="alert error">Du måste logga in.</div>
+              </div>
+            </section>
+          )}
+
+          {!authLoading && isLoggedIn && mustChangePassword && (
+            <section className="grid">
+              <div className="card" style={{ gridColumn: '1 / -1' }}>
+                <div className="alert error">Du måste byta lösenord innan du kan fortsätta.</div>
+              </div>
+            </section>
+          )}
+
+          {!authLoading && isLoggedIn && !mustChangePassword && !(Array.isArray(roles) && roles.includes('Admin')) && (
+            <section className="grid">
+              <div className="card" style={{ gridColumn: '1 / -1' }}>
+                <div className="alert error">Du saknar behörighet för att se denna sida.</div>
+              </div>
+            </section>
+          )}
+
+          {!authLoading && isLoggedIn && !mustChangePassword && Array.isArray(roles) && roles.includes('Admin') && (
+            <AdminUsersPanel />
+          )}
+        </>
       )}
 
       {isPortalChangePasswordRoute && (

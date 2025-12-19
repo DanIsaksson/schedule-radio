@@ -151,6 +151,102 @@ public static class AdminUserEndpoints
             return Results.Ok(results);
         });
 
+        group.MapPut("/users/{userId}", async (
+            string userId,
+            AdminUpdateUserRequest request,
+            UserManager<ApplicationUser> userManager,
+            RoleManager<IdentityRole> roleManager) =>
+        {
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                return Results.BadRequest("UserId is required.");
+            }
+
+            if (string.IsNullOrWhiteSpace(request.Role))
+            {
+                return Results.BadRequest("Role is required.");
+            }
+
+            if (string.IsNullOrWhiteSpace(request.Address))
+            {
+                return Results.BadRequest("Address is required.");
+            }
+
+            if (string.IsNullOrWhiteSpace(request.Phone))
+            {
+                return Results.BadRequest("Phone is required.");
+            }
+
+            string role = NormalizeRole(request.Role);
+            if (role.Length == 0)
+            {
+                return Results.BadRequest("Role must be 'Admin' or 'Contributor'.");
+            }
+
+            if (!await roleManager.RoleExistsAsync(role))
+            {
+                return Results.BadRequest($"Role '{role}' does not exist.");
+            }
+
+            var user = await userManager.FindByIdAsync(userId);
+            if (user is null)
+            {
+                return Results.NotFound();
+            }
+
+            user.Address = request.Address.Trim();
+            user.PhoneNumber = request.Phone.Trim();
+            user.Bio = string.IsNullOrWhiteSpace(request.Bio) ? null : request.Bio.Trim();
+            user.PhotoUrl = string.IsNullOrWhiteSpace(request.PhotoUrl) ? null : request.PhotoUrl.Trim();
+
+            var updateResult = await userManager.UpdateAsync(user);
+            if (!updateResult.Succeeded)
+            {
+                var errors = updateResult.Errors.Select(e => e.Description);
+                return Results.BadRequest(new { Errors = errors });
+            }
+
+            var currentRoles = await userManager.GetRolesAsync(user);
+
+            if (!currentRoles.Contains(role, StringComparer.Ordinal))
+            {
+                var addResult = await userManager.AddToRoleAsync(user, role);
+                if (!addResult.Succeeded)
+                {
+                    var errors = addResult.Errors.Select(e => e.Description);
+                    return Results.BadRequest(new { Errors = errors });
+                }
+            }
+
+            var knownRolesToRemove = currentRoles
+                .Where(r => string.Equals(r, "Admin", StringComparison.OrdinalIgnoreCase)
+                            || string.Equals(r, "Contributor", StringComparison.OrdinalIgnoreCase))
+                .Where(r => !string.Equals(r, role, StringComparison.Ordinal))
+                .ToArray();
+
+            if (knownRolesToRemove.Length > 0)
+            {
+                var removeResult = await userManager.RemoveFromRolesAsync(user, knownRolesToRemove);
+                if (!removeResult.Succeeded)
+                {
+                    var errors = removeResult.Errors.Select(e => e.Description);
+                    return Results.BadRequest(new { Errors = errors });
+                }
+            }
+
+            var finalRoles = await userManager.GetRolesAsync(user);
+
+            return Results.Ok(new AdminUserListItemResponse(
+                UserId: user.Id,
+                Email: user.Email ?? user.UserName ?? string.Empty,
+                Phone: user.PhoneNumber,
+                Address: user.Address,
+                Bio: user.Bio,
+                PhotoUrl: user.PhotoUrl,
+                MustChangePassword: user.MustChangePassword,
+                Roles: finalRoles.ToArray()));
+        });
+
         // B.3 [Admin.Users.Delete] Delete an account.
         // Why: We block self-delete to prevent an admin from locking themselves out of the system.
         group.MapDelete("/users/{userId}", async (
@@ -238,6 +334,13 @@ public static class AdminUserEndpoints
 
 public sealed record AdminCreateUserRequest(
     string? Email,
+    string? Role,
+    string? Address,
+    string? Phone,
+    string? Bio,
+    string? PhotoUrl);
+
+public sealed record AdminUpdateUserRequest(
     string? Role,
     string? Address,
     string? Phone,

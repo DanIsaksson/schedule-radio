@@ -30,6 +30,7 @@ using Microsoft.AspNetCore.Mvc; // [FromBody]
 using API.Data; // SchedulerContext
 using API.Services;
 using Scheduler.Endpoints; // MapSimpleEndpoints
+using Microsoft.Extensions.FileProviders;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -171,6 +172,15 @@ if (app.Environment.IsDevelopment()) { app.UseSwagger(); app.UseSwaggerUI(); }
 // 3. CORS (Security Check)
 app.UseDefaultFiles();
 app.UseStaticFiles();
+var imagesRootPath = Path.Combine(app.Environment.ContentRootPath, "Images");
+if (Directory.Exists(imagesRootPath))
+{
+    app.UseStaticFiles(new StaticFileOptions
+    {
+        FileProvider = new PhysicalFileProvider(imagesRootPath),
+        RequestPath = "/images"
+    });
+}
 app.UseCors();
 
 // [Startup.Backend.8b] Block public self-registration
