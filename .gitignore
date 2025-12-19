@@ -5,6 +5,10 @@
 [Dd]esign-context/
 [Ii]nteractive-Lesson/
 
+# Cookies
+cookies-*.txt
+API/*cookie*.txt
+
 # Markdown
 # *.md
 
